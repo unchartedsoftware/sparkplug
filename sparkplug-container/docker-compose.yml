@@ -29,8 +29,7 @@ sparkmaster:
   volumes:
     - ./conf:/conf/master
     - ./data:/tmp/data
-    - ../sparkplug-listener:/opt/sparkplug
-    - ./libs:/opt/libs
+    - ..:/opt/sparkplug
   links:
     - rabbitmq
 
@@ -56,7 +55,7 @@ sparkworker:
   volumes:
     - ./conf/worker:/conf
     - ./data:/tmp/data
-    - ../sparkplug-listener:/opt/sparkplug
+    - ..:/opt/sparkplug
   links:
     - sparkmaster
     - rabbitmq

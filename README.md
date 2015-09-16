@@ -8,5 +8,6 @@
 
 ```
 docker exec -it sparkplugcontainer_sparkmaster_1 /bin/bash
+cd /opt/sparkplug/sparkplug-test
 ./gradlew build spark
 ```

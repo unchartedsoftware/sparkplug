@@ -1,0 +1,89 @@
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.6'
+}
+
+buildscript {
+  repositories {
+    jcenter()
+    mavenLocal()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE"
+    classpath "org.springframework:springloaded:1.2.4.RELEASE"
+  }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+repositories {
+  jcenter()
+  mavenLocal()
+  mavenCentral()
+}
+
+configurations {
+  provided
+}
+
+sourceSets {
+  main { compileClasspath += configurations.provided }
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+idea {
+  module {
+    downloadJavadoc = true
+    downloadSources = true
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    inheritOutputDirs = false
+    outputDir = file("$buildDir/classes/main/")
+
+    scopes.PROVIDED.plus += [configurations.provided]
+  }
+}
+
+dependencies {
+  compile project(":sparkplug-listener")
+
+  // magic
+  compile("org.projectlombok:lombok:1.16.6")
+  compile("com.google.guava:guava:18.0")
+
+  // the ole spring
+  compile "org.springframework.boot:spring-boot-actuator"
+  compile "org.springframework.boot:spring-boot-starter"
+
+  // logging
+  compile("org.slf4j:slf4j-api:1.7.12")
+  compile("ch.qos.logback:logback-classic:1.1.3")
+  compile("org.slf4j:jcl-over-slf4j:1.7.12")
+  compile("org.slf4j:jul-to-slf4j:1.7.12")
+  compile("org.slf4j:log4j-over-slf4j:1.7.12")
+}
+
+task fatJar(type: Jar) {
+  manifest {
+    attributes('Implementation-Title': 'Sparkplug',
+        'Implementation-Version': project.version)
+  }
+
+  baseName = project.name + '-all'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+}
+
+task spark(overwrite: true, type: Exec, dependsOn: [jar, fatJar]) {
+  executable = 'spark-submit'
+  def jarName = project.name + '-all' + '-' + project.version + '.jar'
+  args = ["--jars", "/opt/sparkplug/sparkplug-test/build/libs/${jarName}", "--class", "uncharted.sparkplug.test.Main",
+          "/opt/sparkplug/sparkplug-test/build/libs/${jarName}"]
+}

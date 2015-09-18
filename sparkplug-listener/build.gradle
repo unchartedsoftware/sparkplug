@@ -8,6 +8,11 @@ repositories {
 }
 
 configurations {
+  all*.exclude group: "org.slf4j"
+  all*.exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+  all*.exclude group: "commons-logging", module: "commons-logging"
+  all*.exclude group: "log4j", module: "log4j"
+
   provided
 }
 

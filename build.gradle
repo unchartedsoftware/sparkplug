@@ -1,6 +1,5 @@
 allprojects {
   group = "software.uncharted"
-  version = "0.1.0-SNAPSHOT"
 }
 
 task wrapper(type: Wrapper) {

@@ -21,7 +21,6 @@ apply plugin: 'spring-boot'
 
 repositories {
   jcenter()
-  mavenLocal()
   mavenCentral()
 }
 
@@ -43,12 +42,6 @@ idea {
   }
 }
 
-configurations {
-  all*.exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
-  all*.exclude group: "commons-logging"
-  all*.exclude group: "org.slf4j"
-}
-
 dependencies {
   // upstream project
   compile project(":sparkplug-listener")
@@ -62,6 +55,8 @@ dependencies {
 
   // logging
   compile "log4j:log4j"
+  compile "org.slf4j:slf4j-api:1.7.12"
+  compile "org.slf4j:slf4j-log4j12:1.7.12"
 }
 
 task fatJar(type: Jar) {

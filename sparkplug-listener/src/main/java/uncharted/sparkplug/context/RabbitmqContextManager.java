@@ -1,16 +1,13 @@
 package uncharted.sparkplug.context;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.AmqpAdmin;
-import org.springframework.amqp.core.Binding;
-import org.springframework.amqp.core.BindingBuilder;
-import org.springframework.amqp.core.DirectExchange;
-import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import uncharted.sparkplug.adapter.SparkplugAdapter;
+import uncharted.sparkplug.message.SparkplugMessage;
 
 import javax.annotation.PostConstruct;
 import java.util.HashMap;
@@ -73,7 +70,12 @@ public class RabbitmqContextManager {
     log.debug("Creating message listener for routing key {}.", routingKey);
     final SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(connectionFactory);
     listenerContainer.addQueues(queue);
-    listenerContainer.setMessageListener(new MessageListenerAdapter(adapter, "onMessage"));
+    listenerContainer.setMessageListener(new MessageListenerAdapter((MessageListener) message -> {
+      final SparkplugMessage sparkplugMessage = new SparkplugMessage();
+      sparkplugMessage.setBody(message.getBody());
+      // FIXME do the spark thread stuff here?
+      adapter.onMessage(null, sparkplugMessage);
+    }));
     listenerContainer.start();
   }
 }

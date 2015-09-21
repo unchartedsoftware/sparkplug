@@ -9,12 +9,15 @@ import uncharted.sparkplug.listener.SparkplugListener;
 import uncharted.sparkplug.message.SparkplugMessage;
 import uncharted.sparkplug.message.SparkplugResponse;
 
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -22,17 +25,15 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 @Slf4j
 public class RabbitMqListenerAdapter {
-  private final BlockingQueue<SparkplugMessage> messages = new LinkedBlockingQueue<>();
+  private final ConcurrentMap<String, BlockingQueue<SparkplugMessage>> messages         = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Boolean>                         inFlight         = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Future<SparkplugResponse>>       executingThreads = new ConcurrentHashMap<>();
 
   private final AtomicReference<ExecutorService>   executorService;
   private final AtomicReference<AmqpTemplate>      amqpTemplate;
   private final AtomicReference<SparkplugListener> sparkplugListener;
 
   private final AtomicReference<JavaSparkContext> sparkContext;
-
-  private final AtomicReference<Future<SparkplugResponse>> executingThread = new AtomicReference<>();
-
-  private AtomicBoolean inFlight = new AtomicBoolean(false);
 
   public RabbitMqListenerAdapter(final ExecutorService executorService, final AmqpTemplate amqpTemplate, final SparkplugListener sparkplugListener,
                                  final JavaSparkContext sparkContext) {
@@ -47,7 +48,17 @@ public class RabbitMqListenerAdapter {
 
   public void queueMessage(final SparkplugMessage message) {
     log.debug("Adding message to queue.");
-    messages.add(message);
+
+    final String uuid = message.getUuid();
+    if (messages.containsKey(uuid)) {
+      log.debug("Adding message to existing queue for {}.", uuid);
+      messages.get(uuid).add(message);
+    } else {
+      log.debug("No queue exists for {}, creating and adding.", uuid);
+      final LinkedBlockingQueue<SparkplugMessage> messageQueue = new LinkedBlockingQueue<>();
+      messageQueue.add(message);
+      messages.put(uuid, messageQueue);
+    }
   }
 
   private void run() {
@@ -62,11 +73,18 @@ public class RabbitMqListenerAdapter {
             // whatever
           }
 
-          if (!messages.isEmpty() && !inFlight.get()) {
-            log.debug("Message was in queue, setting flag to in flight.");
-            inFlight.set(true);
-            final SparkplugMessage message = messages.poll();
-            executingThread.set(executorService.get().submit(() -> sparkplugListener.get().onMessage(sparkContext.get(), message)));
+          // loop through the messages to see if we have any queue
+          for (final Entry<String, BlockingQueue<SparkplugMessage>> messageEntry : messages.entrySet()) {
+            final String uuid = messageEntry.getKey();
+            if (!inFlight.containsKey(uuid)) {
+              final BlockingQueue<SparkplugMessage> messageQueue = messageEntry.getValue();
+              if (!messageQueue.isEmpty()) {
+                log.debug("There are {} messages for queue {}.", uuid, messageQueue.size());
+                final SparkplugMessage message = messageQueue.poll();
+                inFlight.put(uuid, true);
+                executingThreads.put(uuid, executorService.get().submit(() -> sparkplugListener.get().onMessage(sparkContext.get(), message)));
+              }
+            }
           }
         }
       }
@@ -83,27 +101,24 @@ public class RabbitMqListenerAdapter {
             // whatever
           }
 
-          final Future<SparkplugResponse> future = executingThread.get();
-          if (inFlight.get()) {
-            if (future != null && future.isDone()) {
-              try {
-                final SparkplugResponse response = future.get();
+          final Iterator<Entry<String, Future<SparkplugResponse>>> futureIter = executingThreads.entrySet().parallelStream()
+                                                                                  .filter(e -> e.getValue().isDone()).iterator();
+          while (futureIter.hasNext()) {
+            final Entry<String, Future<SparkplugResponse>> futureEntry = futureIter.next();
+            try {
+              final SparkplugResponse response = futureEntry.getValue().get();
 
-                log.debug("Sending message back to upstream: {}", response);
+              log.debug("Sending message back to upstream: {}", response);
 
-                final MessageProperties messageProperties = new MessageProperties();
-                messageProperties.getHeaders().put("uuid", response.getUuid());
+              final MessageProperties messageProperties = new MessageProperties();
+              messageProperties.getHeaders().put("uuid", response.getUuid());
 
-                amqpTemplate.get().send("sparkplug-outbound", "sparkplug-response", new Message(response.getBody(), messageProperties));
+              amqpTemplate.get().send("sparkplug-outbound", "sparkplug-response", new Message(response.getBody(), messageProperties));
 
-                executingThread.set(null);
-                inFlight.set(false);
-              } catch (InterruptedException | ExecutionException e) {
-                log.error("Could not retrieve response from Sparkplug adapter.", e);
-              }
-            } else if (future == null) {
-              log.debug("Flag was set to in flight, but no future was pending. Resetting.");
-              inFlight.set(false);
+              executingThreads.remove(futureEntry.getKey());
+              inFlight.remove(futureEntry.getKey());
+            } catch (InterruptedException | ExecutionException e) {
+              log.error("Could not retrieve response from Sparkplug adapter.", e);
             }
           }
         }

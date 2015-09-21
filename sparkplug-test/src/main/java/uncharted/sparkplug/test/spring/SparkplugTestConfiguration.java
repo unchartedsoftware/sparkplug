@@ -103,6 +103,7 @@ public class SparkplugTestConfiguration {
           log.debug("Sending test message {} to test queue {}.", i, testQueue);
           final MessageProperties messageProperties = new MessageProperties();
           messageProperties.getHeaders().put("uuid", uuid);
+          messageProperties.getHeaders().put("order", i);
           amqpTemplate.send("sparkplug-inbound", "sparkplug-test-" + testQueue,
                              new Message(RandomStringUtils.randomAlphanumeric(256).getBytes(), messageProperties));
         }

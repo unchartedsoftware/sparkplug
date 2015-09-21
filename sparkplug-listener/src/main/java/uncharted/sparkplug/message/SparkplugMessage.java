@@ -13,6 +13,7 @@ import lombok.experimental.Accessors;
 @NoArgsConstructor
 @Accessors(chain=true)
 public class SparkplugMessage {
+  private Integer order;
   private String uuid;
   private String command;
   private byte[] body;

@@ -95,6 +95,7 @@ public class RabbitmqContextManager {
     listenerContainer.setMessageListener(new MessageListenerAdapter((MessageListener) message -> {
       final SparkplugMessage sparkplugMessage = new SparkplugMessage();
       sparkplugMessage.setUuid((String)message.getMessageProperties().getHeaders().getOrDefault("uuid", "no-uuid-found"));
+      sparkplugMessage.setOrder((Integer)message.getMessageProperties().getHeaders().getOrDefault("order", -1));
       sparkplugMessage.setBody(message.getBody());
 
       log.debug("Queueing message for {}.", routingKey);

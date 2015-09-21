@@ -7,12 +7,13 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.PropertySources;
 import uncharted.sparkplug.spring.SparkplugConfiguration;
+import uncharted.sparkplug.test.spring.SparkplugTestConfiguration;
 
 /**
  * Test harness for Sparkplug
  */
 @SpringBootApplication
-@Import({SparkplugConfiguration.class, RabbitAutoConfiguration.class})
+@Import({SparkplugConfiguration.class, RabbitAutoConfiguration.class, SparkplugTestConfiguration.class})
 @PropertySources(value = {@PropertySource("classpath:application.properties")})
 public class Main {
   public static void main(final String... args) {

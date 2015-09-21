@@ -1,14 +1,11 @@
 package uncharted.sparkplug.spring;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.apache.spark.SparkConf;
+import org.apache.spark.api.java.JavaSparkContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import uncharted.sparkplug.context.RabbitmqContextManager;
-import uncharted.sparkplug.listener.SimpleSparkplugListener;
-import uncharted.sparkplug.listener.SparkplugListener;
-
-import java.util.UUID;
 
 /**
  * Basic configuration
@@ -25,19 +22,14 @@ public class SparkplugConfiguration {
     return new RabbitmqContextManager();
   }
 
-  /**
-   * If no listener has been defined, register a simple listener.
-   *
-   * @return The simple Sparkplug listener
-   */
   @Bean
-  @ConditionalOnMissingBean(SparkplugListener.class)
-  public SimpleSparkplugListener simpleSparkplugAdapter() {
-    final SimpleSparkplugListener sparkplugAdapter = new SimpleSparkplugListener();
+  public JavaSparkContext sparkContext() {
+    final SparkConf sparkConf = new SparkConf().setAppName("Sparkplug");
+    log.info("Created Spark configuration.");
 
-    final RabbitmqContextManager rabbitmqContextManager = sparkContextManager();
-    rabbitmqContextManager.registerAdapter(UUID.randomUUID().toString(), sparkplugAdapter);
+    final JavaSparkContext jsc = new JavaSparkContext(sparkConf);
+    log.info("Created Java Spark context.");
 
-    return sparkplugAdapter;
+    return jsc;
   }
 }

@@ -29,6 +29,16 @@ targetCompatibility = 1.8
 
 mainClassName = "uncharted.sparkplug.test.Main"
 
+configurations {
+  all*.exclude group:"ch.qos.logback"
+
+  provided
+}
+
+sourceSets {
+  main { compileClasspath += configurations.provided }
+}
+
 idea {
   module {
     downloadJavadoc = true
@@ -39,6 +49,8 @@ idea {
 
     inheritOutputDirs = false
     outputDir = file("$buildDir/classes/main/")
+
+    scopes.PROVIDED.plus += [configurations.provided]
   }
 }
 
@@ -52,6 +64,10 @@ dependencies {
 
   // the ole spring
   compile "org.springframework.boot:spring-boot-starter:1.2.5.RELEASE"
+
+  // spark
+  provided("org.apache.spark:spark-core_2.10:1.4.0")
+  provided("org.apache.spark:spark-sql_2.10:1.4.0")
 
   // logging
   compile "log4j:log4j"

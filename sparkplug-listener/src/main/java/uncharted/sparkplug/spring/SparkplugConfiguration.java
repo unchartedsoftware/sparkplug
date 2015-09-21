@@ -4,10 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import uncharted.sparkplug.adapter.SimpleSparkplugAdapter;
-import uncharted.sparkplug.adapter.SparkplugAdapter;
-import uncharted.sparkplug.listener.rabbitmq.RabbitMqSparkplugListener;
 import uncharted.sparkplug.context.RabbitmqContextManager;
+import uncharted.sparkplug.listener.SimpleSparkplugListener;
+import uncharted.sparkplug.listener.SparkplugListener;
 
 import java.util.UUID;
 
@@ -26,20 +25,15 @@ public class SparkplugConfiguration {
     return new RabbitmqContextManager();
   }
 
-  @Bean
-  public RabbitMqSparkplugListener sparkplugListener() {
-    return new RabbitMqSparkplugListener();
-  }
-
   /**
-   * If no adapter has been defined, register a simple adapter.
+   * If no listener has been defined, register a simple listener.
    *
-   * @return The simple Sparkplug adapter
+   * @return The simple Sparkplug listener
    */
   @Bean
-  @ConditionalOnMissingBean(SparkplugAdapter.class)
-  public SimpleSparkplugAdapter simpleSparkplugAdapter() {
-    final SimpleSparkplugAdapter sparkplugAdapter = new SimpleSparkplugAdapter();
+  @ConditionalOnMissingBean(SparkplugListener.class)
+  public SimpleSparkplugListener simpleSparkplugAdapter() {
+    final SimpleSparkplugListener sparkplugAdapter = new SimpleSparkplugListener();
 
     final RabbitmqContextManager rabbitmqContextManager = sparkContextManager();
     rabbitmqContextManager.registerAdapter(UUID.randomUUID().toString(), sparkplugAdapter);

@@ -1,10 +1,12 @@
 package uncharted.sparkplug.listener;
 
-import uncharted.sparkplug.context.RabbitmqContextManager;
+import org.apache.spark.SparkContext;
+import uncharted.sparkplug.message.SparkplugMessage;
+import uncharted.sparkplug.message.SparkplugResponse;
 
 /**
- * Defines the contract between an application and Spark
+ * Contract to handle messages received by Sparkplug
  */
 public interface SparkplugListener {
-  void setRabbitmqContextManager(final RabbitmqContextManager rabbitmqContextManager);
+  SparkplugResponse onMessage(final SparkContext sparkContext, final SparkplugMessage message);
 }

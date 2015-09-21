@@ -8,7 +8,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
-import uncharted.sparkplug.adapter.SparkplugAdapter;
+import uncharted.sparkplug.listener.SparkplugListener;
 import uncharted.sparkplug.message.SparkplugMessage;
 import uncharted.sparkplug.message.SparkplugResponse;
 
@@ -30,7 +30,7 @@ public class RabbitmqContextManager {
   @Autowired
   private AmqpTemplate amqpTemplate;
 
-  private final Map<String, SparkplugAdapter> registeredAdapters = new HashMap<>();
+  private final Map<String, SparkplugListener> registeredAdapters = new HashMap<>();
   private final DirectExchange directExchange = new DirectExchange("sparkplug-inbound", true, false);
 
   private ExecutorService executorService = Executors.newWorkStealingPool();
@@ -75,24 +75,24 @@ public class RabbitmqContextManager {
   }
 
   /**
-   * Register an adapter that will handle messages that match the corresponding routing key
+   * Register an listener that will handle messages that match the corresponding routing key
    *
-   * @param routingKey The routing key that this adapter should bind itself to; can be '*' for all messages.
-   * @param adapter    The adapter to invoke for messages that match the routing key
+   * @param routingKey The routing key that this listener should bind itself to; can be '*' for all messages.
+   * @param adapter    The listener to invoke for messages that match the routing key
    */
-  public void registerAdapter(final String routingKey, final SparkplugAdapter adapter) {
+  public void registerAdapter(final String routingKey, final SparkplugListener adapter) {
     if (registeredAdapters.containsKey(routingKey)) {
-      log.error("Another Sparkplug adapter is already listening for routing key {}.", routingKey);
-      throw new IllegalArgumentException(String.format("Another Sparkplug adapter is already listening for routing key %s.", routingKey));
+      log.error("Another Sparkplug listener is already listening for routing key {}.", routingKey);
+      throw new IllegalArgumentException(String.format("Another Sparkplug listener is already listening for routing key %s.", routingKey));
     }
 
-    log.debug("Registering Sparkplug adapter for routing key {}.", routingKey);
+    log.debug("Registering Sparkplug listener for routing key {}.", routingKey);
     registeredAdapters.put(routingKey, adapter);
 
     connectAdapterToQueue(routingKey, adapter);
   }
 
-  private void connectAdapterToQueue(final String routingKey, final SparkplugAdapter adapter) {
+  private void connectAdapterToQueue(final String routingKey, final SparkplugListener adapter) {
     final Queue queue = new Queue(UUID.randomUUID().toString(), false);
 
     log.debug("Created queue {} for routing key {}.", queue.getName(), routingKey);

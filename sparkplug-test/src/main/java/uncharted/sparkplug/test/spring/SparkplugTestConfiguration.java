@@ -3,7 +3,6 @@ package uncharted.sparkplug.test.spring;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.commons.lang3.RandomUtils;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Binding;
@@ -95,12 +94,11 @@ public class SparkplugTestConfiguration {
 
         final String uuid = UUID.randomUUID().toString();
         for (int i = 0; i < 10; i++) {
-          final Integer testQueue = RandomUtils.nextInt(0, 1);
-
-          log.debug("Sending test message {} to test queue {}.", i, testQueue);
+          log.debug("Sending test message {}.", i);
           final MessageProperties messageProperties = new MessageProperties();
           messageProperties.getHeaders().put("uuid", uuid);
           messageProperties.getHeaders().put("order", i);
+          messageProperties.getHeaders().put("command", "derp");
           amqpTemplate.send("sparkplug-inbound", "sparkplug-test",
                              new Message(RandomStringUtils.randomAlphanumeric(256).getBytes(), messageProperties));
         }

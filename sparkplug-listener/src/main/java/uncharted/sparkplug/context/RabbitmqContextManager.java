@@ -86,12 +86,19 @@ public class RabbitmqContextManager {
     listenerContainer.addQueues(queue);
     listenerContainer.setMessageListener(new MessageListenerAdapter((MessageListener) message -> {
       final SparkplugMessage sparkplugMessage = new SparkplugMessage();
-      sparkplugMessage.setUuid((String)message.getMessageProperties().getHeaders().getOrDefault("uuid", "no-uuid-found"));
+      sparkplugMessage.setUuid((String) message.getMessageProperties().getHeaders().getOrDefault("uuid", "no-uuid-found"));
+      sparkplugMessage.setCommand((String) message.getMessageProperties().getHeaders().getOrDefault("command", "no-command-found"));
       sparkplugMessage.setOrder((Integer) message.getMessageProperties().getHeaders().getOrDefault("order", -1));
       sparkplugMessage.setBody(message.getBody());
 
-      log.debug("Queueing message for {}.", routingKey);
-      listenerAdapter.queueMessage(sparkplugMessage);
+      if (sparkplugMessage.getUuid().equals("no-uuid-found")) {
+        log.error("Inbound message had no UUID, ignoring.");
+      } else if (sparkplugMessage.getCommand().equals("no-command-found")) {
+        log.error("Inbound message had no command, ignoring.");
+      } else {
+        log.debug("Queueing message for {}.", routingKey);
+        listenerAdapter.queueMessage(sparkplugMessage);
+      }
     }));
     listenerContainer.start();
   }

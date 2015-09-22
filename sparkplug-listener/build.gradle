@@ -1,3 +1,16 @@
+buildscript {
+  repositories {
+    maven { url 'http://repo.spring.io/plugins-release' }
+  }
+  dependencies {
+    classpath 'org.springframework.build.gradle:propdeps-plugin:0.0.7'
+  }
+}
+
+apply plugin: 'propdeps'
+apply plugin: 'propdeps-idea'
+apply plugin: 'propdeps-maven'
+
 apply plugin: 'java'
 apply plugin: 'idea'
 
@@ -13,6 +26,8 @@ configurations {
 sourceSets {
   main { compileClasspath += configurations.provided }
 }
+
+compileJava.dependsOn(processResources)
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -38,7 +53,10 @@ dependencies {
   compile("com.google.guava:guava:18.0")
 
   // the ole spring
-  compile "org.springframework.boot:spring-boot-starter-amqp:1.2.5.RELEASE"
+  compile("org.springframework.boot:spring-boot-starter-amqp:1.2.6.RELEASE")
+
+  // manage those @ConfigurationProperties annotations
+  optional("org.springframework.boot:spring-boot-configuration-processor:1.2.6.RELEASE")
 
   // spark
   provided("org.apache.spark:spark-core_2.10:1.4.0")

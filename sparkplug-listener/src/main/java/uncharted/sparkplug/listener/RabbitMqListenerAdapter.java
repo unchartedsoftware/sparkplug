@@ -1,11 +1,10 @@
-package uncharted.sparkplug.adapter;
+package uncharted.sparkplug.listener;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
-import uncharted.sparkplug.listener.SparkplugListener;
 import uncharted.sparkplug.message.SparkplugMessage;
 import uncharted.sparkplug.message.SparkplugResponse;
 

@@ -13,13 +13,12 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.listener.SimpleMessageListenerContainer;
 import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
-import uncharted.sparkplug.adapter.RabbitMqListenerAdapter;
+import uncharted.sparkplug.listener.RabbitMqListenerAdapter;
 import uncharted.sparkplug.listener.SparkplugListener;
 import uncharted.sparkplug.message.SparkplugMessage;
+import uncharted.sparkplug.spring.SparkplugProperties;
 
 import javax.annotation.PostConstruct;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,6 +28,9 @@ import java.util.concurrent.Executors;
  */
 @Slf4j
 public class RabbitmqContextManager {
+  @Autowired
+  private SparkplugProperties sparkplugProperties;
+
   @Autowired
   private ConnectionFactory connectionFactory;
 
@@ -41,7 +43,9 @@ public class RabbitmqContextManager {
   @Autowired
   private JavaSparkContext sparkContext;
 
-  private final Map<String, RabbitMqListenerAdapter> registeredAdapters     = new HashMap<>();
+  @Autowired
+  private SparkplugListener listener;
+
   private final DirectExchange                       inboundDirectExchange  = new DirectExchange("sparkplug-inbound", true, false);
   private final DirectExchange                       outboundDirectExchange = new DirectExchange("sparkplug-outbound", true, false);
 
@@ -57,26 +61,15 @@ public class RabbitmqContextManager {
     log.debug("Creating Sparkplug RabbitMQ exchange.");
     amqpAdmin.declareExchange(inboundDirectExchange);
     amqpAdmin.declareExchange(outboundDirectExchange);
+
+    connectAdapterToQueue();
   }
 
-  /**
-   * Register an listener that will handle messages that match the corresponding routing key
-   *
-   * @param routingKey The routing key that this listener should bind itself to; can be '*' for all messages.
-   * @param listener    The listener to invoke for messages that match the routing key
-   */
-  public void registerAdapter(final String routingKey, final SparkplugListener listener) {
-    if (registeredAdapters.containsKey(routingKey)) {
-      log.error("Another Sparkplug listener is already listening for routing key {}.", routingKey);
-      throw new IllegalArgumentException(String.format("Another Sparkplug listener is already listening for routing key %s.", routingKey));
-    }
+  private void connectAdapterToQueue() {
+    final String routingKey = sparkplugProperties.getRoutingKey();
 
     log.debug("Registering Sparkplug listener for routing key {}.", routingKey);
 
-    connectAdapterToQueue(routingKey, listener);
-  }
-
-  private void connectAdapterToQueue(final String routingKey, final SparkplugListener listener) {
     final Queue queue = new Queue(UUID.randomUUID().toString(), true, false, true);
 
     log.debug("Created queue {} for routing key {}.", queue.getName(), routingKey);
@@ -87,7 +80,6 @@ public class RabbitmqContextManager {
     amqpAdmin.declareBinding(binding);
 
     final RabbitMqListenerAdapter listenerAdapter = new RabbitMqListenerAdapter(executorService, amqpTemplate, listener, sparkContext);
-    registeredAdapters.put(routingKey, listenerAdapter);
 
     log.debug("Creating message listener for routing key {}.", routingKey);
     final SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(connectionFactory);
@@ -95,7 +87,7 @@ public class RabbitmqContextManager {
     listenerContainer.setMessageListener(new MessageListenerAdapter((MessageListener) message -> {
       final SparkplugMessage sparkplugMessage = new SparkplugMessage();
       sparkplugMessage.setUuid((String)message.getMessageProperties().getHeaders().getOrDefault("uuid", "no-uuid-found"));
-      sparkplugMessage.setOrder((Integer)message.getMessageProperties().getHeaders().getOrDefault("order", -1));
+      sparkplugMessage.setOrder((Integer) message.getMessageProperties().getHeaders().getOrDefault("order", -1));
       sparkplugMessage.setBody(message.getBody());
 
       log.debug("Queueing message for {}.", routingKey);

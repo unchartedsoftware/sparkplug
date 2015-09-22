@@ -19,8 +19,8 @@ import org.springframework.amqp.rabbit.listener.adapter.MessageListenerAdapter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
-import uncharted.sparkplug.context.RabbitmqContextManager;
-import uncharted.sparkplug.test.listener.SimpleSparkplugListener;
+import uncharted.sparkplug.listener.SparkplugListener;
+import uncharted.sparkplug.test.handler.SimpleSparkplugCommandHandler;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -43,7 +43,7 @@ public class SparkplugTestConfiguration {
   private AmqpTemplate amqpTemplate;
 
   @Autowired
-  private RabbitmqContextManager rabbitmqContextManager;
+  private SparkplugListener sparkplugListener;
 
   private final DirectExchange outboundDirectExchange = new DirectExchange("sparkplug-outbound", true, false);
   private final Queue          responseQueue          = new Queue("sparkplug-test-response", true, false, true);
@@ -65,10 +65,7 @@ public class SparkplugTestConfiguration {
       return;
     }
 
-    for (int i = 0; i < 1; i++) {
-      final SimpleSparkplugListener sparkplugListener = new SimpleSparkplugListener(wordList);
-      rabbitmqContextManager.registerAdapter("sparkplug-test-" + i, sparkplugListener);
-    }
+    sparkplugListener.registerCommandHandler("derp", new SimpleSparkplugCommandHandler(wordList));
 
     amqpAdmin.declareExchange(outboundDirectExchange);
     amqpAdmin.declareQueue(responseQueue);
@@ -77,7 +74,7 @@ public class SparkplugTestConfiguration {
     final Binding binding = BindingBuilder.bind(responseQueue).to(outboundDirectExchange).with(routingKey);
     amqpAdmin.declareBinding(binding);
 
-    log.debug("Creating message listener for routing key {}.", routingKey);
+    log.debug("Creating response message listener for routing key {}.", routingKey);
     final SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(connectionFactory);
     listenerContainer.addQueues(responseQueue);
     listenerContainer.setMessageListener(new MessageListenerAdapter((MessageListener) message ->
@@ -104,7 +101,7 @@ public class SparkplugTestConfiguration {
           final MessageProperties messageProperties = new MessageProperties();
           messageProperties.getHeaders().put("uuid", uuid);
           messageProperties.getHeaders().put("order", i);
-          amqpTemplate.send("sparkplug-inbound", "sparkplug-test-" + testQueue,
+          amqpTemplate.send("sparkplug-inbound", "sparkplug-test",
                              new Message(RandomStringUtils.randomAlphanumeric(256).getBytes(), messageProperties));
         }
         //}

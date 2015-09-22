@@ -1,11 +1,11 @@
-package uncharted.sparkplug.test.listener;
+package uncharted.sparkplug.test.handler;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import scala.Tuple2;
-import uncharted.sparkplug.listener.SparkplugListener;
+import uncharted.sparkplug.handler.CommandHandler;
 import uncharted.sparkplug.message.SparkplugMessage;
 import uncharted.sparkplug.message.SparkplugResponse;
 
@@ -16,10 +16,10 @@ import java.util.Map;
  * Basic implementation of the SparkplugAdapter
  */
 @Slf4j
-public class SimpleSparkplugListener implements SparkplugListener {
+public class SimpleSparkplugCommandHandler implements CommandHandler {
   private final List<String> words;
 
-  public SimpleSparkplugListener(final List<String> words) {
+  public SimpleSparkplugCommandHandler(final List<String> words) {
     this.words = words;
   }
 

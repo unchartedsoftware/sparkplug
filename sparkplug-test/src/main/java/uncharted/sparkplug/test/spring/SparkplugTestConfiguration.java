@@ -1,8 +1,10 @@
 package uncharted.sparkplug.test.spring;
 
+import com.google.common.collect.Lists;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.RandomUtils;
 import org.springframework.amqp.core.AmqpAdmin;
 import org.springframework.amqp.core.AmqpTemplate;
 import org.springframework.amqp.core.Binding;
@@ -19,7 +21,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ClassPathResource;
 import uncharted.sparkplug.listener.SparkplugListener;
-import uncharted.sparkplug.test.handler.SimpleSparkplugCommandHandler;
+import uncharted.sparkplug.test.handler.WordCountCommandHandler;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
@@ -64,7 +66,7 @@ public class SparkplugTestConfiguration {
       return;
     }
 
-    sparkplugListener.registerCommandHandler("derp", new SimpleSparkplugCommandHandler(wordList));
+    sparkplugListener.registerCommandHandler("derp", new WordCountCommandHandler(wordList));
 
     amqpAdmin.declareExchange(outboundDirectExchange);
     amqpAdmin.declareQueue(responseQueue);
@@ -84,7 +86,6 @@ public class SparkplugTestConfiguration {
       @SuppressWarnings("InfiniteLoopStatement")
       @Override
       public void run() {
-        // while (true) {
         log.debug("Send thread fired up.");
         try {
           sleep(30000);
@@ -92,17 +93,18 @@ public class SparkplugTestConfiguration {
           // whatever
         }
 
-        final String uuid = UUID.randomUUID().toString();
-        for (int i = 0; i < 10; i++) {
+        final List<String> randomIds = Lists.newArrayList(RandomStringUtils.randomAlphabetic(8), RandomStringUtils.randomAlphabetic(8),
+                                                           RandomStringUtils.randomAlphabetic(8), RandomStringUtils.randomAlphabetic(8),
+                                                           RandomStringUtils.randomAlphabetic(8));
+
+        for (int i = 0; i < 1000; i++) {
           log.debug("Sending test message {}.", i);
           final MessageProperties messageProperties = new MessageProperties();
-          messageProperties.getHeaders().put("uuid", uuid);
+          messageProperties.getHeaders().put("uuid", randomIds.get(RandomUtils.nextInt(0, randomIds.size())));
           messageProperties.getHeaders().put("order", i);
           messageProperties.getHeaders().put("command", "derp");
-          amqpTemplate.send("sparkplug-inbound", "sparkplug-test",
-                             new Message(RandomStringUtils.randomAlphanumeric(256).getBytes(), messageProperties));
+          amqpTemplate.send("sparkplug-inbound", "sparkplug-test", new Message(RandomStringUtils.randomAlphanumeric(256).getBytes(), messageProperties));
         }
-        //}
       }
     }.start();
   }

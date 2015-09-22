@@ -46,8 +46,7 @@ public class RabbitmqContextManager {
   @Autowired
   private SparkplugListener listener;
 
-  private final DirectExchange                       inboundDirectExchange  = new DirectExchange("sparkplug-inbound", true, false);
-  private final DirectExchange                       outboundDirectExchange = new DirectExchange("sparkplug-outbound", true, false);
+  private DirectExchange inboundDirectExchange;
 
   private ExecutorService executorService = Executors.newWorkStealingPool();
 
@@ -59,7 +58,11 @@ public class RabbitmqContextManager {
   @PostConstruct
   public void init() {
     log.debug("Creating Sparkplug RabbitMQ exchange.");
+    inboundDirectExchange = new DirectExchange(sparkplugProperties.getInboundExchange(), true, false);
     amqpAdmin.declareExchange(inboundDirectExchange);
+
+    // not top level since we don't re-use it
+    final DirectExchange outboundDirectExchange = new DirectExchange(sparkplugProperties.getOutboundExchange(), true, false);
     amqpAdmin.declareExchange(outboundDirectExchange);
 
     connectAdapterToQueue();
@@ -79,7 +82,7 @@ public class RabbitmqContextManager {
     final Binding binding = BindingBuilder.bind(queue).to(inboundDirectExchange).with(routingKey);
     amqpAdmin.declareBinding(binding);
 
-    final RabbitMqListenerAdapter listenerAdapter = new RabbitMqListenerAdapter(executorService, amqpTemplate, listener, sparkContext);
+    final RabbitMqListenerAdapter listenerAdapter = new RabbitMqListenerAdapter(sparkplugProperties, executorService, amqpTemplate, listener, sparkContext);
 
     log.debug("Creating message listener for routing key {}.", routingKey);
     final SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer(connectionFactory);

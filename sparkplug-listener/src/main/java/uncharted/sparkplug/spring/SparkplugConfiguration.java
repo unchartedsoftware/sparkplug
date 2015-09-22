@@ -31,9 +31,14 @@ public class SparkplugConfiguration {
   }
 
   @Bean
-  public JavaSparkContext sparkContext() {
-    final SparkConf sparkConf = new SparkConf().setAppName("Sparkplug");
-    log.info("Created Spark configuration.");
+  public JavaSparkContext sparkContext(final SparkplugProperties sparkplugProperties) {
+    final SparkConf sparkConf = new SparkConf().setAppName(sparkplugProperties.getAppName());
+
+    if (sparkplugProperties.getSparkMaster() != null) {
+      sparkConf.setMaster(sparkplugProperties.getSparkMaster());
+    }
+
+    log.info("Created Spark configuration (Spark master: {}, app name: {}", sparkplugProperties.getSparkMaster(), sparkplugProperties.getAppName());
 
     final JavaSparkContext jsc = new JavaSparkContext(sparkConf);
     log.info("Created Java Spark context.");

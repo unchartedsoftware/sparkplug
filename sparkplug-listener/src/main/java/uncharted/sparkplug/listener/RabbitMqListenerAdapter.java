@@ -7,7 +7,9 @@ import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import uncharted.sparkplug.message.SparkplugMessage;
 import uncharted.sparkplug.message.SparkplugResponse;
+import uncharted.sparkplug.spring.SparkplugProperties;
 
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.BlockingQueue;
@@ -25,8 +27,11 @@ import java.util.concurrent.atomic.AtomicReference;
 @Slf4j
 public class RabbitMqListenerAdapter {
   private final ConcurrentMap<String, BlockingQueue<SparkplugMessage>> messages         = new ConcurrentHashMap<>();
+  private final ConcurrentMap<String, Instant>                         messageStamp     = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Boolean>                         inFlight         = new ConcurrentHashMap<>();
   private final ConcurrentMap<String, Future<SparkplugResponse>>       executingThreads = new ConcurrentHashMap<>();
+
+  private final SparkplugProperties sparkplugProperties;
 
   private final AtomicReference<ExecutorService>   executorService;
   private final AtomicReference<AmqpTemplate>      amqpTemplate;
@@ -34,8 +39,10 @@ public class RabbitMqListenerAdapter {
 
   private final AtomicReference<JavaSparkContext> sparkContext;
 
-  public RabbitMqListenerAdapter(final ExecutorService executorService, final AmqpTemplate amqpTemplate, final SparkplugListener sparkplugListener,
-                                 final JavaSparkContext sparkContext) {
+  public RabbitMqListenerAdapter(final SparkplugProperties sparkplugProperties, final ExecutorService executorService,
+                                 final AmqpTemplate amqpTemplate, final SparkplugListener sparkplugListener, final JavaSparkContext sparkContext) {
+    this.sparkplugProperties = sparkplugProperties;
+
     this.executorService = new AtomicReference<>(executorService);
     this.amqpTemplate = new AtomicReference<>(amqpTemplate);
     this.sparkplugListener = new AtomicReference<>(sparkplugListener);
@@ -58,9 +65,12 @@ public class RabbitMqListenerAdapter {
       messageQueue.add(message);
       messages.put(uuid, messageQueue);
     }
+
+    messageStamp.put(uuid, Instant.now());
   }
 
   private void run() {
+    // monitor inbound messages and consume them as appropriate
     new Thread() {
       @SuppressWarnings("InfiniteLoopStatement")
       @Override
@@ -89,6 +99,7 @@ public class RabbitMqListenerAdapter {
       }
     }.start();
 
+    // monitor futures and consume them/send a response back as appropriate
     new Thread() {
       @SuppressWarnings("InfiniteLoopStatement")
       @Override
@@ -112,13 +123,37 @@ public class RabbitMqListenerAdapter {
               final MessageProperties messageProperties = new MessageProperties();
               messageProperties.getHeaders().put("uuid", response.getUuid());
 
-              amqpTemplate.get().send("sparkplug-outbound", "sparkplug-response", new Message(response.getBody(), messageProperties));
+              amqpTemplate.get().send(sparkplugProperties.getOutboundExchange(), sparkplugProperties.getOutboundRoutingKey(), new Message(response.getBody(), messageProperties));
 
               executingThreads.remove(futureEntry.getKey());
               inFlight.remove(futureEntry.getKey());
             } catch (InterruptedException | ExecutionException e) {
               log.error("Could not retrieve response from Sparkplug adapter.", e);
             }
+          }
+        }
+      }
+    }.start();
+
+    // periodically check the messages queue for UUIDs that haven't been used in a while, nuke after a set period of time
+    new Thread() {
+      @SuppressWarnings("InfiniteLoopStatement")
+      @Override
+      public void run() {
+        while (true) {
+          try {
+            sleep(100);
+          } catch (final InterruptedException ie) {
+            // whatever
+          }
+
+          final Instant timeAgo = Instant.now().minusMillis(sparkplugProperties.getSessionTimeout());
+          final Iterator<String> messageStampIter = messageStamp.entrySet().parallelStream().filter(e -> e.getValue().isBefore(timeAgo)).map(Entry::getKey).iterator();
+          while (messageStampIter.hasNext()) {
+            final String uuid = messageStampIter.next();
+            log.debug("UUID {} has not been accessed in a while, removing from queue.", uuid);
+            messages.remove(uuid);
+            messageStamp.remove(uuid);
           }
         }
       }

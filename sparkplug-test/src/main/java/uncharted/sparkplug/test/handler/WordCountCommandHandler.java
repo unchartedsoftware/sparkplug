@@ -16,10 +16,10 @@ import java.util.Map;
  * Basic implementation of the SparkplugAdapter
  */
 @Slf4j
-public class SimpleSparkplugCommandHandler implements CommandHandler {
+public class WordCountCommandHandler implements CommandHandler {
   private final List<String> words;
 
-  public SimpleSparkplugCommandHandler(final List<String> words) {
+  public WordCountCommandHandler(final List<String> words) {
     this.words = words;
   }
 
@@ -39,7 +39,7 @@ public class SimpleSparkplugCommandHandler implements CommandHandler {
 
     try {
       log.debug("Going to sleep for a while.");
-      Thread.sleep(5000);
+      Thread.sleep(2500);
     } catch (InterruptedException e) {
       // whatever
     }

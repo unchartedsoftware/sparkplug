@@ -2,45 +2,44 @@ package uncharted.sparkplug.spring;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.UUID;
-
 /**
  * Used to map values from application.properties into the code
  */
+@SuppressWarnings("ALL")
 @ConfigurationProperties(prefix = "sparkplug")
 public class SparkplugProperties {
   private String sparkMaster = null;
-  private String appName = "Sparkplug";
+  private String sparkAppName = "Sparkplug";
 
-  private String inboundExchange = "sparkplug-inbound";
+  private String inboundExchange   = "sparkplug-inbound";
+  private String inboundRoutingKey = "sparkplug-request";
 
-  private String outboundExchange = "sparkplug-outbound";
+  private String outboundExchange   = "sparkplug-outbound";
   private String outboundRoutingKey = "sparkplug-response";
 
-  private String routingKey = UUID.randomUUID().toString();
   private Integer sessionTimeout = 30 * 60 * 1000;
 
   public Integer getSessionTimeout() {
     return sessionTimeout;
   }
 
-  public void setSessionTimeout(Integer sessionTimeout) {
+  public void setSessionTimeout(final Integer sessionTimeout) {
     this.sessionTimeout = sessionTimeout;
   }
 
-  public String getRoutingKey() {
-    return routingKey;
+  public String getInboundRoutingKey() {
+    return inboundRoutingKey;
   }
 
-  public void setRoutingKey(String routingKey) {
-    this.routingKey = routingKey;
+  public void setInboundRoutingKey(final String inboundRoutingKey) {
+    this.inboundRoutingKey = inboundRoutingKey;
   }
 
   public String getInboundExchange() {
     return inboundExchange;
   }
 
-  public void setInboundExchange(String inboundExchange) {
+  public void setInboundExchange(final String inboundExchange) {
     this.inboundExchange = inboundExchange;
   }
 
@@ -48,7 +47,7 @@ public class SparkplugProperties {
     return outboundExchange;
   }
 
-  public void setOutboundExchange(String outboundExchange) {
+  public void setOutboundExchange(final String outboundExchange) {
     this.outboundExchange = outboundExchange;
   }
 
@@ -56,23 +55,23 @@ public class SparkplugProperties {
     return outboundRoutingKey;
   }
 
-  public void setOutboundRoutingKey(String outboundRoutingKey) {
+  public void setOutboundRoutingKey(final String outboundRoutingKey) {
     this.outboundRoutingKey = outboundRoutingKey;
   }
 
-  public String getAppName() {
-    return appName;
+  public String getSparkAppName() {
+    return sparkAppName;
   }
 
-  public void setAppName(String appName) {
-    this.appName = appName;
+  public void setSparkAppName(final String sparkAppName) {
+    this.sparkAppName = sparkAppName;
   }
 
   public String getSparkMaster() {
     return sparkMaster;
   }
 
-  public void setSparkMaster(String sparkMaster) {
+  public void setSparkMaster(final String sparkMaster) {
     this.sparkMaster = sparkMaster;
   }
 }

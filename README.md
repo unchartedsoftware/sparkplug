@@ -16,6 +16,21 @@ spring.rabbitmq.virtualHost=/
 spring.rabbitmq.dynamic=true
 ```
 
+The following properties can also be added; the default values are as shown:
+
+```
+sparkplug.spark-master=null # null tells us to use u local spark context, rather than connecting to a remote instance
+sparkplug.spark-app-name=Sparkplug
+
+sparkplug.inbound-exchange=sparkplug-inbound
+sparkplug.inbound-routing-key=sparkplug-request
+
+sparkplug.outbound-exchange=sparkplug-outbound
+sparkplug.outbound-routing-key=sparkplug-request
+
+sparkplug.session-timeout=1800000 # 30 minutes, in seconds
+```
+
 You then implement the `CommandHandler` class (multiple times) and register it to listen for a specific command key in the `SparkplugListener` (which is
 exposed as a bean, so you can `@Autowire` it).
 

@@ -29,4 +29,6 @@ RUN curl -sL --retry 3 \
   | tar x -C /usr/ \
   && ln -s $SPARK_HOME /usr/spark
 
+ADD conf/log4j.properties /conf/log4j.properties
+
 CMD /usr/spark/bin/spark-class org.apache.spark.deploy.master.Master

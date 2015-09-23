@@ -1,0 +1,96 @@
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.6'
+}
+
+buildscript {
+  repositories {
+    jcenter()
+    mavenLocal()
+    mavenCentral()
+  }
+
+  dependencies {
+    classpath "org.springframework.boot:spring-boot-gradle-plugin:1.2.5.RELEASE"
+    classpath "org.springframework:springloaded:1.2.4.RELEASE"
+  }
+}
+
+apply plugin: 'java'
+apply plugin: 'idea'
+apply plugin: 'spring-boot'
+
+repositories {
+  jcenter()
+  mavenCentral()
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+mainClassName = "uncharted.sparkplug.test.Main"
+
+configurations {
+  all*.exclude group:"ch.qos.logback"
+
+  provided
+}
+
+sourceSets {
+  main { compileClasspath += configurations.provided }
+}
+
+idea {
+  module {
+    downloadJavadoc = true
+    downloadSources = true
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    inheritOutputDirs = false
+    outputDir = file("$buildDir/classes/main/")
+
+    scopes.PROVIDED.plus += [configurations.provided]
+  }
+}
+
+dependencies {
+  // upstream project
+  compile project(":sparkplug-listener")
+
+  // magic
+  compile("org.projectlombok:lombok:1.16.6")
+  compile("com.google.guava:guava:18.0")
+
+  // the ole spring
+  compile "org.springframework.boot:spring-boot-starter:1.2.5.RELEASE"
+
+  // spark
+  provided("org.apache.spark:spark-core_2.10:1.4.0")
+  provided("org.apache.spark:spark-sql_2.10:1.4.0")
+
+  // logging
+  compile "log4j:log4j"
+  compile "org.slf4j:slf4j-api:1.7.12"
+  compile "org.slf4j:slf4j-log4j12:1.7.12"
+}
+
+task fatJar(type: Jar) {
+  manifest {
+    attributes('Implementation-Title': 'Sparkplug', 'Implementation-Version': project.version)
+  }
+
+  baseName = project.name + '-all'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+
+  exclude('org/springframework/boot/autoconfigure/mobile/*ThymeleafViewResolverViewResolverDelegateConfiguration*')
+
+  with jar
+}
+
+task spark(overwrite: true, type: Exec, dependsOn: [jar, fatJar]) {
+  executable = 'spark-submit'
+  def jarName = project.name + '-all.jar'
+  args = ["--jars", "/opt/sparkplug/sparkplug-test/build/libs/${jarName}", "--class", "uncharted.sparkplug.test.Main",
+          "/opt/sparkplug/sparkplug-test/build/libs/${jarName}", "--verbose"]
+}

@@ -12,6 +12,7 @@ sparkmaster:
   hostname: sparkmaster
   environment:
     SPARK_CONF_DIR: /conf
+    TERM: linux
   expose:
     - 7001
     - 7002
@@ -27,10 +28,9 @@ sparkmaster:
     - 7077:7077
     - 8080:8080
   volumes:
-    - ./conf:/conf/master
-    - ./data:/tmp/data
-    - ../sparkplug-listener:/opt/sparkplug
-    - ./libs:/opt/libs
+    - ./spark/conf:/conf/master
+    - ./spark/data:/tmp/data
+    - ..:/opt/sparkplug
   links:
     - rabbitmq
 
@@ -44,6 +44,8 @@ sparkworker:
     SPARK_WORKER_MEMORY: 2g
     SPARK_WORKER_PORT: 8881
     SPARK_WORKER_WEBUI_PORT: 8081
+    TERM: linux
+    affinity: container==sparkmaster
   expose:
     - 7012
     - 7013
@@ -54,11 +56,9 @@ sparkworker:
   ports:
     - 8081
   volumes:
-    - ./conf/worker:/conf
-    - ./data:/tmp/data
-    - ../sparkplug-listener:/opt/sparkplug
+    - ./spark/conf/worker:/conf
+    - ./spark/data:/tmp/data
+    - ..:/opt/sparkplug
   links:
     - sparkmaster
     - rabbitmq
-  environment:
-    - "affinity:container==sparkmaster"

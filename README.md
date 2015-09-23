@@ -34,7 +34,8 @@ sparkplug.session-timeout=1800000 # 30 minutes, in seconds
 You then implement the `CommandHandler` class (multiple times) and register it to listen for a specific command key in the `SparkplugListener` (which is
 exposed as a bean, so you can `@Autowire` it).
 
-Upon deployment to Spark, it connects to a specified RabbitMQ server and creates two exchanges - `sparkplug-inbound` and `sparkplug-outbound`.
+Upon deployment to Spark, it connects to a specified RabbitMQ server and creates two exchanges - `sparkplug-inbound` and `sparkplug-outbound` (the names can
+be overridden as described above).
 
 #### Testing
 

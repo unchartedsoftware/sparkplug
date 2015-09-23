@@ -88,7 +88,7 @@ public class RabbitMqListenerAdapter {
             if (!inFlight.containsKey(uuid)) {
               final BlockingQueue<SparkplugMessage> messageQueue = messageEntry.getValue();
               if (!messageQueue.isEmpty()) {
-                log.debug("There are {} messages for queue {}.", uuid, messageQueue.size());
+                log.debug("Queue {} has {} messages.", uuid, messageQueue.size());
                 final SparkplugMessage message = messageQueue.poll();
                 inFlight.put(uuid, true);
                 executingThreads.put(uuid, executorService.get().submit(() -> sparkplugListener.get().onMessage(sparkContext.get(), message)));

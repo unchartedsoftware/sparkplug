@@ -13,6 +13,8 @@ apply plugin: 'propdeps-maven'
 
 apply plugin: 'java'
 apply plugin: 'idea'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 repositories {
   jcenter()
@@ -28,6 +30,24 @@ sourceSets {
 }
 
 compileJava.dependsOn(processResources)
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+  classifier = 'javadoc'
+  from 'build/docs/javadoc'
+}
+
+task sourcesJar(type: Jar) {
+  from sourceSets.main.allSource
+  classifier = 'sources'
+}
+
+artifacts {
+  archives javadocJar, sourcesJar
+}
+
+signing {
+  sign configurations.archives
+}
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8

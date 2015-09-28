@@ -69,7 +69,7 @@ public class RabbitmqContextManager {
   }
 
   private void connectAdapterToQueue() {
-    final String routingKey = sparkplugProperties.getRoutingKey();
+    final String routingKey = sparkplugProperties.getInboundRoutingKey();
 
     log.debug("Registering Sparkplug listener for routing key {}.", routingKey);
 

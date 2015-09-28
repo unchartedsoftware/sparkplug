@@ -1,8 +1,8 @@
 rabbitmq:
   image: tutum/rabbitmq
   ports:
-    - 5682
-    - 15682
+    - 5672
+    - 15672
   environment:
     - RABBITMQ_PASS=sparkplug
 

@@ -90,7 +90,7 @@ task fatJar(type: Jar) {
 
 task spark(overwrite: true, type: Exec, dependsOn: [jar, fatJar]) {
   executable = 'spark-submit'
-  def jarName = project.name + '-all.jar'
+  def jarName = project.name + '-all-'  + project.version + '.jar'
   args = ["--jars", "/opt/sparkplug/sparkplug-test/build/libs/${jarName}", "--class", "uncharted.sparkplug.test.Main",
           "/opt/sparkplug/sparkplug-test/build/libs/${jarName}", "--verbose"]
 }

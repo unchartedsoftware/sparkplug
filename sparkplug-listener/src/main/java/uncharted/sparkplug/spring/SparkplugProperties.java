@@ -19,11 +19,11 @@ public class SparkplugProperties {
   private String appName = "Sparkplug";
 
   private String inboundExchange = "sparkplug-inbound";
+  private String inboundRoutingKey = UUID.randomUUID().toString();
 
   private String outboundExchange = "sparkplug-outbound";
   private String outboundRoutingKey = "sparkplug-response";
 
-  private String routingKey = UUID.randomUUID().toString();
   private Integer sessionTimeout = 30 * 60 * 1000;
 
   public String getRabbitMqServer() {
@@ -74,12 +74,12 @@ public class SparkplugProperties {
     this.sessionTimeout = sessionTimeout;
   }
 
-  public String getRoutingKey() {
-    return routingKey;
+  public String getInboundRoutingKey() {
+    return inboundRoutingKey;
   }
 
-  public void setRoutingKey(String routingKey) {
-    this.routingKey = routingKey;
+  public void setInboundRoutingKey(String inboundRoutingKey) {
+    this.inboundRoutingKey = inboundRoutingKey;
   }
 
   public String getInboundExchange() {

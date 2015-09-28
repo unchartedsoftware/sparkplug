@@ -8,16 +8,62 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @SuppressWarnings("ALL")
 @ConfigurationProperties(prefix = "sparkplug")
 public class SparkplugProperties {
+  private String rabbitMqServer = "localhost";
+  private Integer rabbitMqPort = 5672;
+  private String rabbitMqUsername = "admin";
+  private String rabbitMqPassword = "admin";
+  private String rabbitMqVirtualHost = "/";
+
   private String sparkMaster = null;
   private String sparkAppName = "Sparkplug";
 
-  private String inboundExchange   = "sparkplug-inbound";
-  private String inboundRoutingKey = "sparkplug-request";
+  private String inboundExchange = "sparkplug-inbound";
+  private String inboundRoutingKey = UUID.randomUUID().toString();
 
   private String outboundExchange   = "sparkplug-outbound";
   private String outboundRoutingKey = "sparkplug-response";
 
   private Integer sessionTimeout = 30 * 60 * 1000;
+
+  public String getRabbitMqServer() {
+    return rabbitMqServer;
+  }
+
+  public void setRabbitMqServer(String rabbitMqServer) {
+    this.rabbitMqServer = rabbitMqServer;
+  }
+
+  public Integer getRabbitMqPort() {
+    return rabbitMqPort;
+  }
+
+  public void setRabbitMqPort(Integer rabbitMqPort) {
+    this.rabbitMqPort = rabbitMqPort;
+  }
+
+  public String getRabbitMqUsername() {
+    return rabbitMqUsername;
+  }
+
+  public void setRabbitMqUsername(String rabbitMqUsername) {
+    this.rabbitMqUsername = rabbitMqUsername;
+  }
+
+  public String getRabbitMqPassword() {
+    return rabbitMqPassword;
+  }
+
+  public void setRabbitMqPassword(String rabbitMqPassword) {
+    this.rabbitMqPassword = rabbitMqPassword;
+  }
+
+  public String getRabbitMqVirtualHost() {
+    return rabbitMqVirtualHost;
+  }
+
+  public void setRabbitMqVirtualHost(String rabbitMqVirtualHost) {
+    this.rabbitMqVirtualHost = rabbitMqVirtualHost;
+  }
 
   public Integer getSessionTimeout() {
     return sessionTimeout;
@@ -31,7 +77,7 @@ public class SparkplugProperties {
     return inboundRoutingKey;
   }
 
-  public void setInboundRoutingKey(final String inboundRoutingKey) {
+  public void setInboundRoutingKey(String inboundRoutingKey) {
     this.inboundRoutingKey = inboundRoutingKey;
   }
 

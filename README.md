@@ -7,13 +7,11 @@
   (or `application.yaml`) file:
 
 ```
-spring.rabbitmq.host=rabbitmq
-spring.rabbitmq.port=5672
-spring.rabbitmq.username=admin
-spring.rabbitmq.password=sparkplug
-spring.rabbitmq.virtualHost=/
-
-spring.rabbitmq.dynamic=true
+sparkplug.rabbitmq.host=rabbitmq
+sparkplug.rabbitmq.port=5672
+sparkplug.rabbitmq.username=admin
+sparkplug.rabbitmq.password=sparkplug
+sparkplug.rabbitmq.virtualHost=/
 ```
 
 The following properties can also be added; the default values are as shown:

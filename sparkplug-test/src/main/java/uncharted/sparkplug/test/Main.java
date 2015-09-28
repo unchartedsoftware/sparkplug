@@ -13,7 +13,7 @@ import uncharted.sparkplug.test.spring.SparkplugTestConfiguration;
  * Test harness for Sparkplug
  */
 @SpringBootApplication
-@Import({SparkplugConfiguration.class, RabbitAutoConfiguration.class, SparkplugTestConfiguration.class})
+@Import({SparkplugConfiguration.class, SparkplugTestConfiguration.class})
 @PropertySources(value = {@PropertySource("classpath:application.properties")})
 public class Main {
   public static void main(final String... args) {

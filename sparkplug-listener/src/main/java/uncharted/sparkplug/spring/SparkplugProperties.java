@@ -9,6 +9,12 @@ import java.util.UUID;
  */
 @ConfigurationProperties(prefix = "sparkplug")
 public class SparkplugProperties {
+  private String rabbitMqServer = "localhost";
+  private Integer rabbitMqPort = 5672;
+  private String rabbitMqUsername = "admin";
+  private String rabbitMqPassword = "admin";
+  private String rabbitMqVirtualHost = "/";
+
   private String sparkMaster = null;
   private String appName = "Sparkplug";
 
@@ -19,6 +25,46 @@ public class SparkplugProperties {
 
   private String routingKey = UUID.randomUUID().toString();
   private Integer sessionTimeout = 30 * 60 * 1000;
+
+  public String getRabbitMqServer() {
+    return rabbitMqServer;
+  }
+
+  public void setRabbitMqServer(String rabbitMqServer) {
+    this.rabbitMqServer = rabbitMqServer;
+  }
+
+  public Integer getRabbitMqPort() {
+    return rabbitMqPort;
+  }
+
+  public void setRabbitMqPort(Integer rabbitMqPort) {
+    this.rabbitMqPort = rabbitMqPort;
+  }
+
+  public String getRabbitMqUsername() {
+    return rabbitMqUsername;
+  }
+
+  public void setRabbitMqUsername(String rabbitMqUsername) {
+    this.rabbitMqUsername = rabbitMqUsername;
+  }
+
+  public String getRabbitMqPassword() {
+    return rabbitMqPassword;
+  }
+
+  public void setRabbitMqPassword(String rabbitMqPassword) {
+    this.rabbitMqPassword = rabbitMqPassword;
+  }
+
+  public String getRabbitMqVirtualHost() {
+    return rabbitMqVirtualHost;
+  }
+
+  public void setRabbitMqVirtualHost(String rabbitMqVirtualHost) {
+    this.rabbitMqVirtualHost = rabbitMqVirtualHost;
+  }
 
   public Integer getSessionTimeout() {
     return sessionTimeout;

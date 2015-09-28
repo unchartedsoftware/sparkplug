@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -28,20 +29,8 @@ import uncharted.sparkplug.listener.SparkplugListener;
 @EnableRabbit
 @Slf4j
 public class SparkplugConfiguration {
-  @Value("${rabbit.server}")
-  private String rabbitServer;
-
-  @Value("${rabbit.port}")
-  private String rabbitPort;
-
-  @Value("${rabbit.username}")
-  private String rabbitUsername;
-
-  @Value("${rabbit.password}")
-  private String rabbitPassword;
-
-  @Value("${rabbit.virtualHost}")
-  private String rabbitVirtualHost;
+  @Autowired
+  private SparkplugProperties sparkplugProperties;
 
   public SparkplugConfiguration() {
     log.debug("Sparkplug Spring configuration initialized.");
@@ -56,9 +45,11 @@ public class SparkplugConfiguration {
 
   @Bean
   public ConnectionFactory connectionFactory() {
-    final CachingConnectionFactory connectionFactory = new CachingConnectionFactory(rabbitServer);
-    connectionFactory.setUsername(rabbitUsername);
-    connectionFactory.setPassword(rabbitPassword);
+    final CachingConnectionFactory connectionFactory = new CachingConnectionFactory(sparkplugProperties.getRabbitMqServer());
+    connectionFactory.setPort(sparkplugProperties.getRabbitMqPort());
+    connectionFactory.setUsername(sparkplugProperties.getRabbitMqUsername());
+    connectionFactory.setPassword(sparkplugProperties.getRabbitMqPassword());
+    connectionFactory.setVirtualHost(sparkplugProperties.getRabbitMqVirtualHost());
     return connectionFactory;
   }
 
@@ -99,7 +90,7 @@ public class SparkplugConfiguration {
   }
 
   @Bean
-  public JavaSparkContext sparkContext(final SparkplugProperties sparkplugProperties) {
+  public JavaSparkContext sparkContext() {
     final SparkConf sparkConf = new SparkConf().setAppName(sparkplugProperties.getAppName());
 
     if (sparkplugProperties.getSparkMaster() != null) {

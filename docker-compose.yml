@@ -1,0 +1,12 @@
+rabbitmq:
+  image: tutum/rabbitmq
+  ports:
+    - 5672
+    - 15672
+  environment:
+    - RABBITMQ_PASS=sparkplug
+
+sparklet:
+  build: .
+  links:
+    - rabbitmq

@@ -1,4 +1,1 @@
-rootProject.name = 'sparkplug'
-
-include 'sparkplug-listener'
-include 'sparkplug-test'
+rootProject.name = 'sparkplug-core'

@@ -56,8 +56,13 @@ project.ext {
   scalaVersion = '2.11.7'
   sparkVersion = '1.5.1'
   scoverageVersion = '1.1.1'
+
   artifactName = 'sparkplug-core'
+  description = 'A Scala library that exposes Spark via message queues.'
   inceptionYear = '2015'
+  url = 'https://github.com/unchartedsoftware/sparkplug'
+  ossrhUsername = project.hasProperty('ossrhUsername') ? project.getProperty('ossrhUsername') : ''
+  ossrhPassword = project.hasProperty('ossrhPassword') ? project.getProperty('ossrhPassword') : ''
 }
 
 configurations {
@@ -65,17 +70,19 @@ configurations {
 }
 
 sourceSets {
-  java { compileClasspath += configurations.provided }
-  scala { compileClasspath += configurations.provided }
-  test { compileClasspath += configurations.provided }
-  test { runtimeClasspath += configurations.provided }
+  main { compileClasspath += configurations.provided }
+  test {
+    compileClasspath += configurations.provided
+    runtimeClasspath += configurations.provided
+  }
+
   scoverage { compileClasspath += configurations.provided }
   testScoverage { compileClasspath += configurations.provided }
 }
 
 dependencies {
   //scala
-  compile("org.scala-lang:scala-library:${scalaVersion}")
+  provided("org.scala-lang:scala-library:${scalaVersion}")
 
   // rxjava
   compile("io.reactivex:rxjava:1.0.10")
@@ -94,8 +101,16 @@ dependencies {
 
 idea {
   module {
+    downloadJavadoc = true
+    downloadSources = true
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
     inheritOutputDirs = false
     outputDir = file("$buildDir/classes/main/")
+
+    scopes.PROVIDED.plus += [configurations.provided]
   }
 }
 
@@ -119,8 +134,13 @@ task docs(type: ScalaDoc) {
 }
 
 task docsJar(type: Jar, dependsOn: docs) {
-  classifier = 'scaladoc'
+  classifier = 'javadoc'
   from docs.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
 }
 
 checkScoverage {
@@ -134,7 +154,7 @@ task testJar(type: Jar) {
 
 task test(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
   executable = 'spark-submit'
-  args = ["--jars","/opt/libs/scalatest_${scalaVersion}-${scalaTestVersion}.jar,/opt/libs/scalac-scoverage-runtime_${scalaVersion}-${scoverageVersion}.jar,/opt/salt/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+  args = ["--jars","/opt/libs/scalatest_${scalaVersion}-${scalaTestVersion}.jar,/opt/libs/scalac-scoverage-runtime_${scalaVersion}-${scoverageVersion}.jar,/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
 }
 
 task coverage(overwrite: true, dependsOn: test) << {
@@ -157,56 +177,22 @@ scalaStyle {
 //////////////////////////////////////
 //BEGIN nexus oss
 //////////////////////////////////////
-task createPom << {
-  pom {
-    project {
-      groupId = group
-      version = version
-      artifactId = artifactName
-
-      inceptionYear = inceptionYear
-      licenses {
-        license {
-          name = 'The Apache Software License, Version 2.0'
-          url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-          distribution = 'repo'
-        }
-      }
-      developers {
-        developer {
-          id = 'mlaccetti'
-          name = 'Michael Laccetti'
-          email = 'mlaccetti@uncharted.software'
-        }
-      }
-    }
-  }.writeTo("${buildDir}/libs/${artifactName}-${version}.pom")
+artifacts {
+  archives docsJar, testJar, sourcesJar
 }
 
 signing {
   sign configurations.archives
-  sign testJar
-  sign docsJar
 }
 
-//make sure install doesn't depend on signing
+//make sure assemble doesn't depend on signing
 gradle.taskGraph.whenReady { taskGraph ->
   def tasks = taskGraph.getAllTasks()
-  if (tasks.find {it.name == 'install'}) {
-    tasks.findAll {it.name == 'signArchives' || it.name == 'signDocsJar' || it.name == 'signTestJar'}.each { task ->
+  if (tasks.find {it.name == 'assemble'}) {
+    tasks.findAll {it.name == 'signArchives' || it.name == 'signDocsJar' || it.name == 'signTestJar' || it.name == 'signSourcesJar'}.each { task ->
       task.enabled = false
     }
   }
-}
-
-task signPom(dependsOn: createPom) << {
-  signing.sign(file("${buildDir}/libs/${artifactName}-${version}.pom"))
-}
-
-task nexus(type: Jar, dependsOn: [signArchives, signTestJar, signDocsJar, signPom]) {
-  baseName "${artifactName}-nexus-bundle"
-  from "${buildDir}/libs"
-  destinationDir file("${buildDir}/nexus")
 }
 
 uploadArchives {
@@ -223,16 +209,16 @@ uploadArchives {
       }
 
       pom.project {
-        name 'Example Application'
-        packaging 'jar'
+        name = artifactName
+        packaging = 'jar'
         // optionally artifactId can be defined here
-        description 'A application used as an example on how to set up pushing  its components to the Central Repository.'
-        url 'http://www.example.com/example-application'
+        description = description
+        url = url
 
         scm {
-          connection 'scm:svn:http://foo.googlecode.com/svn/trunk/'
-          developerConnection 'scm:svn:https://foo.googlecode.com/svn/trunk/'
-          url 'http://foo.googlecode.com/svn/trunk/'
+          connection 'scm:git:git://github.com/unchartedsoftware/sparkplug.git'
+          developerConnection 'scm:git:git@github.com:unchartedsoftware/sparkplug.git'
+          url 'https://github.com/unchartedsoftware/sparkplug'
         }
 
         licenses {
@@ -244,9 +230,9 @@ uploadArchives {
 
         developers {
           developer {
-            id 'manfred'
-            name 'Manfred Moser'
-            email 'manfred@sonatype.com'
+            id = 'mlaccetti'
+            name = 'Michael Laccetti'
+            email = 'mlaccetti@uncharted.software'
           }
         }
       }

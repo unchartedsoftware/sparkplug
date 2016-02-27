@@ -22,10 +22,8 @@ import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.SparkConf
 
-object Spark {
-  val conf = new SparkConf().setAppName("sparkplug-server")
-  val sc = new SparkContext(conf)
-  val sqlContext = new org.apache.spark.sql.SQLContext(sc)
+object SparkplugInstance {
+  val sparkplug = new Sparkplug()
 }
 
 object Main {

@@ -1,0 +1,249 @@
+/**
+ * $ ./gradlew
+ * The default task will build the project and run the test suite inside
+ * your local spark environment (spark-submit must be on the PATH).
+ *
+ * To build and install library, run ./gradlew jar install
+ *
+ * To generate documentation and docs JAR, run ./gradlew docsJar
+ *
+ * A coverage report will be present at build/reports/scoverage/index.html
+ */
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '2.11'
+}
+
+group = 'software.uncharted.sparkplug'
+version = '0.2.0'
+
+buildscript {
+  repositories {
+    mavenLocal()
+    mavenCentral()
+    jcenter()
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+
+  dependencies {
+    classpath 'com.github.maiflai:gradle-scalatest:0.11'
+    classpath 'org.scoverage:gradle-scoverage:1.0.9'
+    classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.4.0x'
+    classpath 'org.github.ngbinh.scalastyle:gradle-scalastyle-plugin_2.11:0.8.0'
+  }
+}
+
+apply plugin: 'java'
+apply plugin: 'scala'
+apply plugin: 'maven'
+apply plugin: 'signing'
+apply plugin: 'com.github.maiflai.scalatest'
+apply plugin: 'scoverage'
+apply plugin: 'idea'
+apply plugin: 'com.github.kt3k.coveralls'
+apply plugin: 'scalaStyle'
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+  mavenCentral()
+  jcenter()
+}
+
+project.ext {
+  scalaBinaryVersion = '2.11'
+  scalaTestVersion = '2.2.5'
+  scalaVersion = '2.11.7'
+  sparkVersion = '1.5.1'
+  scoverageVersion = '1.1.1'
+
+  artifactName = 'sparkplug-core'
+  description = 'A Scala library that exposes Spark via message queues.'
+  inceptionYear = '2015'
+  url = 'https://github.com/unchartedsoftware/sparkplug'
+  ossrhUsername = project.hasProperty('ossrhUsername') ? project.getProperty('ossrhUsername') : ''
+  ossrhPassword = project.hasProperty('ossrhPassword') ? project.getProperty('ossrhPassword') : ''
+}
+
+configurations {
+  provided
+}
+
+sourceSets {
+  main { compileClasspath += configurations.provided }
+  test {
+    compileClasspath += configurations.provided
+    runtimeClasspath += configurations.provided
+  }
+
+  scoverage { compileClasspath += configurations.provided }
+  testScoverage { compileClasspath += configurations.provided }
+}
+
+dependencies {
+  //scala
+  provided("org.scala-lang:scala-library:${scalaVersion}")
+
+  // rxjava
+  compile("io.reactivex:rxjava:1.0.10")
+
+  //spark
+  provided("org.apache.spark:spark-core_${scalaBinaryVersion}:${sparkVersion}")
+
+  //scalatest
+  testCompile("org.scalatest:scalatest_${scalaBinaryVersion}:2+")
+  testRuntime("org.pegdown:pegdown:1.1.0")
+
+  //scoverage
+  scoverage "org.scoverage:scalac-scoverage-plugin_${scalaBinaryVersion}:${scoverageVersion}",
+    "org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}"
+}
+
+idea {
+  module {
+    downloadJavadoc = true
+    downloadSources = true
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    inheritOutputDirs = false
+    outputDir = file("$buildDir/classes/main/")
+
+    scopes.PROVIDED.plus += [configurations.provided]
+  }
+}
+
+jar {
+  baseName = "${artifactName}"
+  version =  version
+  dependsOn configurations.runtime
+  from {
+    (configurations.runtime - configurations.provided).collect {
+      it.isDirectory() ? it : zipTree(it)
+    }
+  } {
+    exclude "META-INF/*.SF"
+    exclude "META-INF/*.DSA"
+    exclude "META-INF/*.RSA"
+  }
+}
+
+task docs(type: ScalaDoc) {
+  source = sourceSets.main.allScala
+}
+
+task docsJar(type: Jar, dependsOn: docs) {
+  classifier = 'javadoc'
+  from docs.destinationDir
+}
+
+task sourcesJar(type: Jar) {
+  classifier = 'sources'
+  from sourceSets.main.allSource
+}
+
+checkScoverage {
+  minimumRate = 1
+}
+
+task testJar(type: Jar) {
+  classifier = 'tests'
+  from sourceSets.test.output
+}
+
+task test(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
+  executable = 'spark-submit'
+  args = ["--jars","/opt/libs/scalatest_${scalaVersion}-${scalaTestVersion}.jar,/opt/libs/scalac-scoverage-runtime_${scalaVersion}-${scoverageVersion}.jar,/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+}
+
+task coverage(overwrite: true, dependsOn: test) << {
+  reportScoverage.execute()
+  checkScoverage.execute()
+}
+
+coveralls {
+  coberturaReportPath = "${buildDir}/reports/scoverage/cobertura.xml"
+}
+
+scalaStyle {
+  configLocation = "scalastyle_config.xml"
+  includeTestSourceDirectory = true
+  source = sourceSets.main.allScala
+  testSource = sourceSets.test.allScala
+  failOnWarning = true
+}
+
+//////////////////////////////////////
+//BEGIN nexus oss
+//////////////////////////////////////
+artifacts {
+  archives docsJar, testJar, sourcesJar
+}
+
+signing {
+  sign configurations.archives
+}
+
+//make sure assemble doesn't depend on signing
+gradle.taskGraph.whenReady { taskGraph ->
+  def tasks = taskGraph.getAllTasks()
+  if (tasks.find {it.name == 'assemble'}) {
+    tasks.findAll {it.name == 'signArchives' || it.name == 'signDocsJar' || it.name == 'signTestJar' || it.name == 'signSourcesJar'}.each { task ->
+      task.enabled = false
+    }
+  }
+}
+
+uploadArchives {
+  repositories {
+    mavenDeployer {
+      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+
+      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+        authentication(userName: ossrhUsername, password: ossrhPassword)
+      }
+
+      pom.project {
+        name = artifactName
+        packaging = 'jar'
+        // optionally artifactId can be defined here
+        description = description
+        url = url
+
+        scm {
+          connection 'scm:git:git://github.com/unchartedsoftware/sparkplug.git'
+          developerConnection 'scm:git:git@github.com:unchartedsoftware/sparkplug.git'
+          url 'https://github.com/unchartedsoftware/sparkplug'
+        }
+
+        licenses {
+          license {
+            name 'The Apache License, Version 2.0'
+            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+          }
+        }
+
+        developers {
+          developer {
+            id = 'mlaccetti'
+            name = 'Michael Laccetti'
+            email = 'mlaccetti@uncharted.software'
+          }
+        }
+      }
+    }
+  }
+}
+//////////////////////////////////////
+//END nexus oss
+//////////////////////////////////////
+
+defaultTasks 'coverage'

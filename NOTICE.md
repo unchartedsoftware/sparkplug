@@ -1,5 +1,5 @@
 # Sparkplug
-Copyright 2015 Uncharted Software Inc.
+Copyright 2015-2016 Uncharted Software Inc.
 
 ## NOTICE files
 

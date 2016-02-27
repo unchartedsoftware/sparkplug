@@ -1,1 +1,3 @@
-rootProject.name = 'sparkplug-core'
+rootProject.name = 'sparkplug'
+
+include ':sparkplug-server'

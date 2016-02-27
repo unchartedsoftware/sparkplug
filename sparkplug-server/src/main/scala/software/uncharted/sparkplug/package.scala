@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Uncharted Software Inc.
+ * Copyright 2015-2016 Uncharted Software Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package software.uncharted
 
 /**
-  * This package contains a pipeline implementation for Spark
+  * This package contains a message queue listener implementation for Spark
   * See the README or {@link software.uncharted.sparkplug.Sparkplug} for more information.
   */
 package object sparkplug

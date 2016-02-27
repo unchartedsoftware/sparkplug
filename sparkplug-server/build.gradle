@@ -10,21 +10,24 @@ buildscript {
 
   dependencies {
     classpath 'com.github.maiflai:gradle-scalatest:0.11'
-    classpath 'org.scoverage:gradle-scoverage:2.0.1'
+    classpath 'gradle.plugin.org.scoverage:gradle-scoverage:2.0.1'
     classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.6.3'
-    classpath 'org.github.ngbinh.scalastyle:gradle-scalastyle-plugin_2.11:0.7.2'
+    classpath 'org.github.ngbinh.scalastyle:gradle-scalastyle-plugin_2.11:0.8.2'
   }
 }
 
+apply plugin: 'idea'
 apply plugin: 'java'
 apply plugin: 'scala'
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'com.github.maiflai.scalatest'
-apply plugin: 'scoverage'
-apply plugin: 'idea'
+apply plugin: 'org.scoverage'
 apply plugin: 'com.github.kt3k.coveralls'
 apply plugin: 'scalaStyle'
+
+group = 'software.uncharted.sparkplug'
+version = '0.2.0'
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
@@ -38,13 +41,13 @@ repositories {
 }
 
 project.ext {
-  scalaBinaryVersion = '2.11'
-  scalaTestVersion = '2.2.5'
-  scalaVersion = '2.11.7'
+  scalaBinaryVersion = '2.10'
+  scalaVersion = '2.10.6'
   sparkVersion = '1.6.0'
+  scalaTestVersion = '2.2.5'
   scoverageVersion = '1.1.1'
 
-  artifactName = 'sparkplug-core'
+  artifactName = 'sparkplug-server'
   description = 'A Scala library that exposes Spark via message queues.'
   inceptionYear = '2015'
   url = 'https://github.com/unchartedsoftware/sparkplug'
@@ -144,7 +147,13 @@ task testJar(type: Jar) {
 
 task test(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
   executable = 'spark-submit'
-  args = ["--jars","/opt/libs/scalatest_${scalaVersion}-${scalaTestVersion}.jar,/opt/libs/scalac-scoverage-runtime_${scalaVersion}-${scoverageVersion}.jar,/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+  args = ["--packages","org.mockito:mockito-all:1.10.19,org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+}
+
+task debug(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
+  executable = 'spark-submit'
+  environment.put 'SPARK_JAVA_OPTS', '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9999'
+  args = ["--packages","org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
 }
 
 task coverage(overwrite: true, dependsOn: test) << {
@@ -157,10 +166,10 @@ coveralls {
 }
 
 scalaStyle {
-  configLocation = "scalastyle_config.xml"
   includeTestSourceDirectory = true
-  source = sourceSets.main.allScala
-  testSource = sourceSets.test.allScala
+  source = "src/main/scala"
+  testSource = "src/test/scala"
+  configLocation = "scalastyle_config.xml"
   failOnWarning = true
 }
 

@@ -16,10 +16,13 @@
 
 package software.uncharted.sparkplug
 
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
+import org.scalatest.FunSpec
 
-class Sparkplug {
-  val conf = new SparkConf().setAppName("sparkplug")
-  val sc = new SparkContext(conf)
+class PlugSpec extends FunSpec {
+  describe("Plug") {
+    it("should allow the creation of a Plug and run it") {
+      val plug = new Plug()
+      assert(plug.run())
+    }
+  }
 }

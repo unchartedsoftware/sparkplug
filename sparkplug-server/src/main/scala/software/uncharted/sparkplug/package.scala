@@ -17,6 +17,6 @@ package software.uncharted
 
 /**
   * This package contains a message queue listener implementation for Spark
-  * See the README or {@link software.uncharted.sparkplug.Sparkplug} for more information.
+  * See the README or {@link software.uncharted.sparkplug.Plug} for more information.
   */
 package object sparkplug

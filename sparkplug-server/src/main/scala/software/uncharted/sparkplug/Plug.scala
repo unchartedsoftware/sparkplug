@@ -16,19 +16,19 @@
 
 package software.uncharted.sparkplug
 
-import org.scalatest.tools.Runner
+import org.apache.spark.SparkContext
+import org.apache.spark.SparkConf
 
-object Main {
-  def main(args: Array[String]): Unit = {
-    if (sys.env.isDefinedAt("SPARK_JAVA_OPTS") && sys.env("SPARK_JAVA_OPTS").contains("jdwp=transport=dt_socket")) {
-      print("Sleeping for 8 seconds. Please connect your debugger now...")
-      val l: Long = 8000
-      Thread.sleep(l)
-    }
+class Plug {
+  def main(args: Array[String]) {
+    run()
+  }
 
-    val testResult = Runner.run(Array("-o", "-R", "build/classes/test"))
-    if (!testResult) {
-      System.exit(1)
-    }
+  def run(): Boolean = {
+    val conf = new SparkConf().setAppName("sparkplug")
+    val sc = new SparkContext(conf)
+
+    println("Connected to Spark.")
+    true
   }
 }

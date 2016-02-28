@@ -77,8 +77,8 @@ dependencies {
   // rxjava
   compile("io.reactivex:rxscala_${scalaBinaryVersion}:0.26.0")
 
-  // op-rabbit
-  compile("com.spingo:op-rabbit-akka-stream_${scalaBinaryVersion}:1.2.1")
+  // reactive-rabbit
+  compile("io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3")
 
   // spark
   provided("org.apache.spark:spark-core_${scalaBinaryVersion}:${sparkVersion}")

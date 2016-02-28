@@ -14,12 +14,6 @@
  * limitations under the License.
  */
 
-package software.uncharted.sparkplug.listener
+package software.uncharted.sparkplug.model
 
-import com.spingo.op_rabbit.RabbitControl
-import akka.actor.{ActorSystem, Props}
-
-class SparkplugListener {
-  implicit val actorSystem = ActorSystem("sparkplug")
-  val rabbitControl = actorSystem.actorOf(Props[RabbitControl])
-}
+case class PlugMessage(id: String)

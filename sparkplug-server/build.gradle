@@ -74,6 +74,9 @@ dependencies {
   // scala
   provided("org.scala-lang:scala-library:${scalaVersion}")
 
+  // akka streams
+  compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.3")
+
   // rxjava
   compile("io.reactivex:rxscala_${scalaBinaryVersion}:0.26.0")
 

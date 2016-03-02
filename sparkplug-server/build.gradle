@@ -29,9 +29,6 @@ apply plugin: 'scalaStyle'
 group = 'software.uncharted.sparkplug'
 version = '0.2.0'
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
 repositories {
   mavenCentral()
   jcenter()
@@ -39,6 +36,9 @@ repositories {
     url "http://spingo-oss.s3.amazonaws.com/repositories/releases"
   }
 }
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 project.ext {
   scalaBinaryVersion = '2.10'

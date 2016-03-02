@@ -10,9 +10,24 @@
  * A coverage report will be present at build/reports/scoverage/index.html
  */
 
+ buildscript {
+   repositories {
+     mavenLocal()
+     mavenCentral()
+     jcenter()
+     maven {
+       url "https://plugins.gradle.org/m2/"
+     }
+   }
+}
+
 task wrapper(type: Wrapper) {
   gradleVersion = '2.11'
 }
 
 group = 'software.uncharted.sparkplug'
 version = '0.2.0'
+
+allprojects {
+  apply plugin: 'idea'
+}

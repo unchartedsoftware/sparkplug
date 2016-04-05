@@ -16,8 +16,10 @@
 
 package software.uncharted.sparkplug
 
+import com.typesafe.config.ConfigFactory
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkConf
+import software.uncharted.sparkplug.listener.PlugListener
 
 class Plug {
   def main(args: Array[String]) {
@@ -25,10 +27,21 @@ class Plug {
   }
 
   def run(): Boolean = {
-    val conf = new SparkConf().setAppName("sparkplug")
+    val config = ConfigFactory.load()
+    val master = config.getString("sparkplug.master")
+
+    val conf = new SparkConf().setAppName("sparkplug").setMaster(master)
     val sc = new SparkContext(conf)
 
     println("Connected to Spark.")
+
+    println("Connecting to RabbitMQ.")
+    val listener = PlugListener
+
+    println("Kicking off consume.")
+    listener.consume()
+
+    println("Kicked off consume.")
     true
   }
 }

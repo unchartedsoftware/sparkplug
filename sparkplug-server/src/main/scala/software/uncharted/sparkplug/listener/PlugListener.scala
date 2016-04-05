@@ -21,19 +21,16 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import io.scalac.amqp.Connection
 
-class PlugListener {
-  // streaming invoices to Accounting Department
-  val connection = Connection()
+object PlugListener  {
+  def consume(): AnyVal = {
+    // streaming invoices to Accounting Department
+    val connection = Connection()
+    // create org.reactivestreams.Publisher
+    val queue = connection.consume(queue = "q_sparkplug")
 
-  // create org.reactivestreams.Publisher
-  val queue = connection.consume(queue = "invoices")
-
-  // create org.reactivestreams.Subscriber
-  val exchange = connection.publish(exchange = "accounting_department", routingKey = "invoices")
-
-  implicit val system = ActorSystem()
-  implicit val mat = ActorMaterializer()
-
-  // Run akka-streams with queue as Source and exchange as Sink
-  Source.fromPublisher(queue).map(_.message).runWith(Sink.fromSubscriber(exchange))
+    implicit val system = ActorSystem()
+    implicit val mat = ActorMaterializer()
+    // Run akka-streams with queue as Source and exchange as Sink
+    Source.fromPublisher(queue).map(_.message).to(Sink.foreach(println)).run()(mat)
+  }
 }

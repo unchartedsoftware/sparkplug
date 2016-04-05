@@ -13,18 +13,17 @@ docker rm -f sparkplug-rabbitmq
 # create the rabbitmq container
 docker run -d \
   --name sparkplug-rabbitmq \
-  --net sparkplug-test \
+  -p 15672:15672 \
   -P \
   gonkulatorlabs/rabbitmq
 
 # fire up our test container
 docker run \
-  --name sparkplug-test \
-  --net sparkplug-test \
+  -p 7077:7077 \
   -p 8080:8080 \
   -p 9999:9999 \
   -v $(pwd):/opt/sparkplug \
+  --link sparkplug-rabbitmq:sparkplug-rabbitmq \
   -it \
-  --workdir="//opt/sparkplug" \
   uncharted/sparkplug-test \
   /bin/bash

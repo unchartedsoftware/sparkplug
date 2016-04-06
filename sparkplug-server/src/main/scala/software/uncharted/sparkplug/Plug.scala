@@ -17,40 +17,31 @@
 package software.uncharted.sparkplug
 
 import com.typesafe.config.ConfigFactory
-import org.apache.spark.SparkContext
-import org.apache.spark.SparkConf
+import org.apache.spark.{SparkConf, SparkContext}
 import software.uncharted.sparkplug.listener.PlugListener
 
 class Plug {
-  var sc: Option[SparkContext] = None
-  var listener: Option[PlugListener] = None
+  val config = ConfigFactory.load()
+  val master = config.getString("sparkplug.master")
 
-  def main(args: Array[String]) {
-    run()
-  }
+  val conf = new SparkConf().setAppName("sparkplug").setMaster(master)
+  val sc: SparkContext = new SparkContext(conf)
 
-  def run(): Boolean = {
-    val config = ConfigFactory.load()
-    val master = config.getString("sparkplug.master")
+  println("Connected to Spark.")
 
-    val conf = new SparkConf().setAppName("sparkplug").setMaster(master)
-    sc = Some(new SparkContext(conf))
+  println("Connecting to RabbitMQ.")
+  val listener: PlugListener = PlugListener.getInstance()
+  listener.connect()
 
-    println("Connected to Spark.")
-
-    println("Connecting to RabbitMQ.")
-    listener = Some(PlugListener.getInstance())
-    listener.get.connect()
-
+  def run(): Unit = {
     println("Kicking off consume.")
-    listener.get.consume()
+    listener.consume()
 
     println("Kicked off consume.")
-    true
   }
 
   def shutdown(): Unit = {
     Console.out.println("Shutting down.")
-    listener.get.end()
+    listener.end()
   }
 }

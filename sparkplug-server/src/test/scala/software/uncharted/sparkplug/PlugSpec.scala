@@ -16,14 +16,60 @@
 
 package software.uncharted.sparkplug
 
-import org.scalatest.FunSpec
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
+import com.google.common.net.MediaType
+import io.scalac.amqp.{Message, Queue}
+import org.scalatest.concurrent.Eventually
+import org.scalatest.{BeforeAndAfter, FunSpec, Matchers}
 
-class PlugSpec extends FunSpec {
+import scala.concurrent.Await
+
+// scalastyle:off underscore.import
+import scala.concurrent.duration._
+
+import Matchers._
+// scalastyle:on underscore.import
+
+class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
+  val plug = new Plug()
+
+  implicit val system = ActorSystem("SparkPlug-Test")
+  implicit val materializer = ActorMaterializer()
+
+  before {
+    Console.out.println("Before each - populating data and starting plug.")
+
+    val source = Source(1 to 50000)
+    val subscriber = plug.listener.getConnection.publishDirectly("q_sparkplug")
+    val sink = Sink.fromSubscriber(subscriber)
+
+    source.map(i => {
+      if (i % 100 == 0) Console.out.println(s"Generating new message: $i")
+      new Message(correlationId = Some((i%2).toString), contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
+    }).runWith(sink)
+  }
+
+  after {
+    Console.out.println("After each - stopping plug.")
+    plug.shutdown()
+
+    materializer.shutdown()
+    system.shutdown()
+  }
+
   describe("Plug") {
     it("should allow the creation of a Plug and run it") {
-      val plug = new Plug()
-      assert(plug.run())
-      plug.shutdown()
+      plug.run()
+
+      eventually (timeout(scaled(30.seconds))) {
+        val messageCount = Await.result(plug.listener.getConnection
+          .queueDeclare(Queue("q_sparkplug", durable = true)), 5.seconds)
+          .messageCount
+        messageCount should be (0)
+        Console.out.println("No more messages in queue, cleaning up.")
+      }
     }
   }
 }

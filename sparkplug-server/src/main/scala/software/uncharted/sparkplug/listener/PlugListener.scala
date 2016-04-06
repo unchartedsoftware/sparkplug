@@ -17,20 +17,18 @@
 package software.uncharted.sparkplug.listener
 
 import akka.actor.ActorSystem
-import akka.stream.ActorMaterializer
+import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
 import io.scalac.amqp.Connection
-
-import scala.concurrent.ExecutionContext.Implicits.global
-
-import scala.concurrent.Future
 
 class PlugListener private() {
   var connection: Option[Connection] = None
   var connected: Boolean = false
 
-  implicit val system = ActorSystem("QuickStart")
+  implicit val system = ActorSystem("SparkPlug")
   implicit val materializer = ActorMaterializer()
+
+  val inFlightIds = scala.collection.mutable.SortedSet[String]()
 
   @throws(classOf[PlugListenerException])
   def connect(): PlugListener = {
@@ -67,17 +65,35 @@ class PlugListener private() {
 
   def consume(): Unit = {
     Console.out.println("Consuming.")
-    val res: Future[Unit] = Source.fromPublisher(connection.get.consume("q_sparkplug"))
-        .runForeach(println(_))
+    val size: Int = 50
+    Source.fromPublisher(connection.get.consume("q_sparkplug"))
+        .buffer(size, OverflowStrategy.backpressure)
+      .filterNot(p => {
+        val cId = p.message.correlationId.get
+        val exists = inFlightIds(cId)
+        // Console.out.println(s"Checking to see if in-flight IDs contains $cId: $exists")
+        if (!exists) {
+          // Console.out.println(s"In-flight IDs did not contain $cId - adding and working.")
+          inFlightIds += cId
+        }
+        exists
+      })
+      .runForeach(p => {
+        val cId = p.message.correlationId.get
+        // Console.out.println(p)
 
-    Console.out.println("Waiting for completion.")
-    res.onComplete((Unit) => Console.out.println("All futures finished."))
-
-    Console.out.println("And we're done.")
+        // Console.out.println(s"Cleaning up $cId from in-flight IDs.")
+        inFlightIds.remove(cId)
+      })
+    Console.out.println("Consumption completed.")
   }
 
   def isConnected: Boolean = {
     connected
+  }
+
+  def getConnection: Connection = {
+    connection.get
   }
 }
 

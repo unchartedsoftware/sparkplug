@@ -13,6 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package software.uncharted.sparkplug.model
+package software.uncharted.sparkplug.handler
 
-case class PlugMessage(id: String)
+import org.apache.spark.SparkContext
+import software.uncharted.sparkplug.model.PlugMessage
+
+trait PlugHandler {
+  def onMessage(sparkContext: SparkContext, message: PlugMessage): Unit
+}

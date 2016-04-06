@@ -22,6 +22,9 @@ import org.apache.spark.SparkConf
 import software.uncharted.sparkplug.listener.PlugListener
 
 class Plug {
+  var sc: Option[SparkContext] = None
+  var listener: Option[PlugListener] = None
+
   def main(args: Array[String]) {
     run()
   }
@@ -31,17 +34,23 @@ class Plug {
     val master = config.getString("sparkplug.master")
 
     val conf = new SparkConf().setAppName("sparkplug").setMaster(master)
-    val sc = new SparkContext(conf)
+    sc = Some(new SparkContext(conf))
 
     println("Connected to Spark.")
 
     println("Connecting to RabbitMQ.")
-    val listener = PlugListener
+    listener = Some(PlugListener.getInstance())
+    listener.get.connect()
 
     println("Kicking off consume.")
-    listener.consume()
+    listener.get.consume()
 
     println("Kicked off consume.")
     true
+  }
+
+  def shutdown(): Unit = {
+    Console.out.println("Shutting down.")
+    listener.get.end()
   }
 }

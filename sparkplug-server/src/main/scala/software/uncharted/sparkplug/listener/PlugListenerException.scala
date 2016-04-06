@@ -14,16 +14,10 @@
  * limitations under the License.
  */
 
-package software.uncharted.sparkplug
+package software.uncharted.sparkplug.listener
 
-import org.scalatest.FunSpec
+class PlugListenerException(message: String, cause: Throwable) extends Exception(message, cause)
 
-class PlugSpec extends FunSpec {
-  describe("Plug") {
-    it("should allow the creation of a Plug and run it") {
-      val plug = new Plug()
-      assert(plug.run())
-      plug.shutdown()
-    }
-  }
-}
+//scalastyle:off null
+object PlugListenerException { def apply(message: String = "", cause: Throwable = null) : PlugListenerException = new PlugListenerException(message, cause)}
+//scalastyle:on null

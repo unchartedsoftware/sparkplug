@@ -38,25 +38,35 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
   implicit val system = ActorSystem("SparkPlug-Test")
   implicit val materializer = ActorMaterializer()
 
+  def time[T](str: String)(thunk: => T): T = {
+    print(str + "... ")
+    val t1 = System.currentTimeMillis
+    val x = thunk
+    val t2 = System.currentTimeMillis
+    println("Execution time: " + (t2 - t1) + " msecs")
+    x
+  }
+
   before {
-    Console.out.println("Before each - populating data and starting plug.")
+    time("Before each - populating data and starting plug.") {
+      val source = Source(1 to 50000)
+      val subscriber = plug.listener.getConnection.publishDirectly("q_sparkplug")
+      val sink = Sink.fromSubscriber(subscriber)
 
-    val source = Source(1 to 50000)
-    val subscriber = plug.listener.getConnection.publishDirectly("q_sparkplug")
-    val sink = Sink.fromSubscriber(subscriber)
-
-    source.map(i => {
-      if (i % 100 == 0) Console.out.println(s"Generating new message: $i")
-      new Message(correlationId = Some((i%2).toString), contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
-    }).runWith(sink)
+      source.map(i => {
+        if (i % 1000 == 0) Console.out.println(s"Generating new message: $i")
+        new Message(correlationId = Some((i % 2).toString), contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
+      }).runWith(sink)
+    }
   }
 
   after {
-    Console.out.println("After each - stopping plug.")
-    plug.shutdown()
+    time("After each - stopping plug.") {
+      plug.shutdown()
 
-    materializer.shutdown()
-    system.shutdown()
+      materializer.shutdown()
+      system.shutdown()
+    }
   }
 
   describe("Plug") {

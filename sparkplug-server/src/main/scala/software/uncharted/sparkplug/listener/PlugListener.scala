@@ -65,7 +65,7 @@ class PlugListener private() {
 
   def consume(): Unit = {
     Console.out.println("Consuming.")
-    val size: Int = 50
+    val size: Int = 500
     Source.fromPublisher(connection.get.consume("q_sparkplug"))
         .buffer(size, OverflowStrategy.backpressure)
       .filterNot(p => {

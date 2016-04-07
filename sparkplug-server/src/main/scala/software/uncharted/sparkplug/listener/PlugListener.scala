@@ -20,15 +20,18 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, OverflowStrategy}
 import akka.stream.scaladsl.Source
 import io.scalac.amqp.Connection
+import org.apache.spark.SparkContext
+import software.uncharted.sparkplug.handler.PlugHandler
+import software.uncharted.sparkplug.model.PlugMessage
 
-class PlugListener private() {
-  var connection: Option[Connection] = None
-  var connected: Boolean = false
+class PlugListener private(sparkContext: SparkContext) {
+  private val handlers = collection.mutable.Map[String, PlugHandler]()
 
-  implicit val system = ActorSystem("SparkPlug")
-  implicit val materializer = ActorMaterializer()
+  private var connection: Option[Connection] = None
+  private var connected: Boolean = false
 
-  val inFlightIds = scala.collection.mutable.SortedSet[String]()
+  private implicit val system = ActorSystem("SparkPlug")
+  private implicit val materializer = ActorMaterializer()
 
   @throws(classOf[PlugListenerException])
   def connect(): PlugListener = {
@@ -45,7 +48,7 @@ class PlugListener private() {
     this
   }
 
-  def end(): PlugListener = {
+  def shutdown(): PlugListener = {
     Console.out.println(s"Checking if connected: $connected; disconnecting if we are.")
 
     if (connected) {
@@ -63,27 +66,27 @@ class PlugListener private() {
     this
   }
 
-  def consume(): Unit = {
+  def registerHandler(command: String, handler: PlugHandler) : Unit = {
+    handlers.put(command, handler)
+  }
+
+  def unregisterHandler(command: String) : Unit = {
+    handlers.remove(command)
+  }
+
+  def run(): Unit = {
     Console.out.println("Consuming.")
     val size: Int = 500
     Source.fromPublisher(connection.get.consume("q_sparkplug"))
         .buffer(size, OverflowStrategy.backpressure)
-      .filterNot(p => {
-        val cId = p.message.correlationId.get
-        val exists = inFlightIds(cId)
-        // Console.out.println(s"Checking to see if in-flight IDs contains $cId: $exists")
-        if (!exists) {
-          // Console.out.println(s"In-flight IDs did not contain $cId - adding and working.")
-          inFlightIds += cId
-        }
-        exists
-      })
       .runForeach(p => {
-        val cId = p.message.correlationId.get
-        // Console.out.println(p)
+        val message = PlugMessage.fromMessage(p.message)
+        val handler = handlers.get(message.command)
+        if (handler.isEmpty) {
+          throw new PlugListenerException(s"No handler specified for command $message.command")
+        }
 
-        // Console.out.println(s"Cleaning up $cId from in-flight IDs.")
-        inFlightIds.remove(cId)
+        handler.get.onMessage(sparkContext, message)
       })
     Console.out.println("Consumption completed.")
   }
@@ -100,9 +103,9 @@ class PlugListener private() {
 object PlugListener {
   private var instance: Option[PlugListener] = None
 
-  def getInstance(): PlugListener = {
+  def getInstance(sparkContext: SparkContext): PlugListener = {
     if (instance.isEmpty) {
-      instance = Some(new PlugListener())
+      instance = Some(new PlugListener(sparkContext))
     }
     instance.get
   }

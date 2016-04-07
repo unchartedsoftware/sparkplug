@@ -22,8 +22,6 @@ import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.listener.PlugListener
 
 class Plug {
-  val handlers = collection.mutable.Map[String, PlugHandler]()
-
   private val config = ConfigFactory.load()
   private val master = config.getString("sparkplug.master")
 
@@ -33,26 +31,26 @@ class Plug {
   println("Connected to Spark.")
 
   println("Connecting to RabbitMQ.")
-  val listener: PlugListener = PlugListener.getInstance()
+  val listener: PlugListener = PlugListener.getInstance(sc)
   listener.connect()
 
   def run(): Unit = {
     println("Kicking off consume.")
-    listener.consume()
+    listener.run()
 
     println("Kicked off consume.")
   }
 
   def shutdown(): Unit = {
     Console.out.println("Shutting down.")
-    listener.end()
+    listener.shutdown()
   }
 
   def registerHandler(command: String, handler: PlugHandler) : Unit = {
-    handlers.put(command, handler)
+    listener.registerHandler(command, handler)
   }
 
   def unregisterHandler(command: String) : Unit = {
-    handlers.remove(command)
+    listener.unregisterHandler(command)
   }
 }

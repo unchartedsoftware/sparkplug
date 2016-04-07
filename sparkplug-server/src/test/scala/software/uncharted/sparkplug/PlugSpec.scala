@@ -16,13 +16,18 @@
 
 package software.uncharted.sparkplug
 
+import java.util.UUID
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.net.MediaType
 import io.scalac.amqp.{Message, Queue}
+import org.apache.spark.SparkContext
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfter, FunSpec, Matchers}
+import software.uncharted.sparkplug.handler.PlugHandler
+import software.uncharted.sparkplug.model.PlugMessage
 
 import scala.concurrent.Await
 
@@ -38,39 +43,39 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
   implicit val system = ActorSystem("SparkPlug-Test")
   implicit val materializer = ActorMaterializer()
 
-  def time[T](str: String)(thunk: => T): T = {
-    print(str + "... ")
-    val t1 = System.currentTimeMillis
-    val x = thunk
-    val t2 = System.currentTimeMillis
-    println("Execution time: " + (t2 - t1) + " msecs")
-    x
-  }
-
   before {
-    time("Before each - populating data and starting plug.") {
-      val source = Source(1 to 50000)
-      val subscriber = plug.listener.getConnection.publishDirectly("q_sparkplug")
-      val sink = Sink.fromSubscriber(subscriber)
+    Console.out.println("Before each - populating data and starting plug.")
+    val source = Source(1 to 1)
+    val subscriber = plug.listener.getConnection.publishDirectly("q_sparkplug")
+    val sink = Sink.fromSubscriber(subscriber)
 
-      source.map(i => {
-        if (i % 1000 == 0) Console.out.println(s"Generating new message: $i")
-        new Message(correlationId = Some((i % 2).toString), contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
-      }).runWith(sink)
-    }
+    source.map(i => {
+      if (i % 1000 == 0) Console.out.println(s"Generating new message: $i")
+      val headers = collection.mutable.Map[String, String]()
+      headers.put("command", "test")
+      headers.put("uuid", UUID.randomUUID().toString)
+
+      new Message(headers = headers.toMap, contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
+    }).runWith(sink)
   }
 
   after {
-    time("After each - stopping plug.") {
-      plug.shutdown()
+    Console.out.println("After each - stopping plug.")
+    plug.shutdown()
 
-      materializer.shutdown()
-      system.shutdown()
-    }
+    materializer.shutdown()
+    system.shutdown()
   }
 
   describe("Plug") {
     it("should allow the creation of a Plug and run it") {
+      //register a handler
+      plug.registerHandler("test", new PlugHandler() {
+        override def onMessage(sparkContext: SparkContext, message: PlugMessage): Unit = {
+          Console.out.println(s"Test command handler handling: $message")
+        }
+      })
+
       plug.run()
 
       eventually (timeout(scaled(30.seconds))) {

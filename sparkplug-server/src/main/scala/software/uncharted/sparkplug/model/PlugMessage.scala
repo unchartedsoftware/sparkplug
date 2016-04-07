@@ -15,4 +15,15 @@
  */
 package software.uncharted.sparkplug.model
 
-case class PlugMessage(id: String)
+import akka.util.ByteStringBuilder
+import io.scalac.amqp.Message
+
+case class PlugMessage(uuid: String, command: String, body: IndexedSeq[Byte]) {
+  override def toString: String = s"UUID: [ $uuid ], Command: [ $command ], Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ]"
+}
+
+object PlugMessage {
+  def fromMessage(message: Message) : PlugMessage = {
+    new PlugMessage(message.headers.getOrElse("uuid", "no-uuid-found"), message.headers.getOrElse("command", "no-command-found"), message.body)
+  }
+}

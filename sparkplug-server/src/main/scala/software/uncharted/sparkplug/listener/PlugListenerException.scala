@@ -16,8 +16,7 @@
 
 package software.uncharted.sparkplug.listener
 
-class PlugListenerException(message: String, cause: Throwable) extends Exception(message, cause)
-
 //scalastyle:off null
-object PlugListenerException { def apply(message: String = "", cause: Throwable = null) : PlugListenerException = new PlugListenerException(message, cause)}
+class PlugListenerException(message: String = null, cause: Throwable = null) extends Exception(message, cause)
 //scalastyle:on null
+

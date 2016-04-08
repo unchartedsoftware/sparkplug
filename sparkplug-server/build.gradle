@@ -80,9 +80,8 @@ dependencies {
   // reactive streams
   compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4")
 
-  // logging
-  // compile("com.typesafe.scala-logging:scala-logging-slf4j_2.10:2.1.2")
-  // compile("ch.qos.logback:logback-classic:1.1.7")
+  // json
+  compile("com.typesafe.play:play-json_${scalaBinaryVersion}:2.4.6")
 
   // scala
   provided("org.scala-lang:scala-library:${scalaVersion}")
@@ -154,13 +153,13 @@ task testJar(type: Jar) {
 
 task test(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
   executable = 'spark-submit'
-  args = ["--packages","org.mockito:mockito-all:1.10.19,org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion},com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4,io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+  args = ["--packages","org.mockito:mockito-all:1.10.19,org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion},com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4,io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3,com.typesafe.play:play-json_${scalaBinaryVersion}:2.4.6","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
 }
 
 task debug(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
   executable = 'spark-submit'
   environment.put 'SPARK_JAVA_OPTS', '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9999'
-  args = ["--packages","org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+  args = ["--packages","org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion},com.typesafe.play:play-json_${scalaBinaryVersion}:2.4.6","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
 }
 
 task coverage(overwrite: true, dependsOn: test) << {

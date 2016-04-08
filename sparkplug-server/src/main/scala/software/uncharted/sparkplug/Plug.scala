@@ -25,7 +25,11 @@ class Plug {
   private val config = ConfigFactory.load()
   private val master = config.getString("sparkplug.master")
 
-  private val conf = new SparkConf().setAppName("sparkplug").setMaster(master)
+  private val sparkConf: SparkConf = new SparkConf()
+  sparkConf.set("spark.eventLog.enabled", "true")
+  sparkConf.set("spark.eventLog.dir", "/tmp")
+
+  private val conf = sparkConf.setAppName("sparkplug").setMaster(master)
   val sc: SparkContext = new SparkContext(conf)
 
   println("Connected to Spark.")

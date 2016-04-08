@@ -78,7 +78,7 @@ class PlugListener private(sparkContext: SparkContext) {
     Console.out.println("Consuming.")
     val size: Int = 500
     Source.fromPublisher(connection.get.consume("q_sparkplug"))
-        .buffer(size, OverflowStrategy.backpressure)
+      .buffer(size, OverflowStrategy.backpressure)
       .runForeach(p => {
         val message = PlugMessage.fromMessage(p.message)
         val handler = handlers.get(message.command)

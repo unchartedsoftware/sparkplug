@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package software.uncharted.sparkplug.handler
+package software.uncharted.sparkplug.model
 
-import org.apache.spark.SparkContext
-import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
+import akka.util.ByteStringBuilder
+import com.google.common.net.MediaType
+import io.scalac.amqp.Message
 
-import scala.concurrent.Future
+case class PlugResponse(uuid: String, body: IndexedSeq[Byte], contentType: String) {
+  override def toString: String = s"UUID: [ $uuid ], Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ], Content Type: [ $contentType ]"
 
-trait PlugHandler {
-  def onMessage(sparkContext: SparkContext, message: PlugMessage): Future[PlugResponse]
+  def toMessage : Message = {
+    val headers = collection.mutable.Map[String, String]()
+    new Message(headers = headers.toMap, body = body, contentType = Some(MediaType.parse(contentType)))
+  }
 }

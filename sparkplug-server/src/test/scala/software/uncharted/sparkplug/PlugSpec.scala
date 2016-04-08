@@ -26,10 +26,12 @@ import io.scalac.amqp.{Message, Queue}
 import org.apache.spark.SparkContext
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfter, FunSpec, Matchers}
+import play.api.libs.json.Json
 import software.uncharted.sparkplug.handler.PlugHandler
-import software.uncharted.sparkplug.model.PlugMessage
+import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 // scalastyle:off underscore.import
 import scala.concurrent.duration._
@@ -69,10 +71,27 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
 
   describe("Plug") {
     it("should allow the creation of a Plug and run it") {
-      //register a handler
+      var handlerResponse: Option[Future[PlugResponse]] = None
+
+      Console.out.println("Creating command handler.")
       plug.registerHandler("test", new PlugHandler() {
-        override def onMessage(sparkContext: SparkContext, message: PlugMessage): Unit = {
-          Console.out.println(s"Test command handler handling: $message")
+        override def onMessage(sc: SparkContext, message: PlugMessage): Future[PlugResponse] = {
+          handlerResponse = Some(Future[PlugResponse] {
+            Console.out.println(s"Test command handler handling: $message")
+
+            val distFile = sc.textFile("/opt/sparkplug/src/test/resources/spark-sample-data.txt")
+            val lineLengths = distFile.map(s => s.length)
+            val totalLength = lineLengths.reduce((a, b) => a + b)
+
+            val response = collection.mutable.Map[String, String]()
+            response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b,a) => s"$b+$a"))
+            response.put("totalLength", totalLength.toString)
+
+            Console.out.println(s"Test command handler done executing: $response")
+
+            new PlugResponse(message.uuid, Json.toJson(response.toMap).toString().getBytes, message.contentType)
+          })
+          handlerResponse.get
         }
       })
 
@@ -84,6 +103,10 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           .messageCount
         messageCount should be (0)
         Console.out.println("No more messages in queue, cleaning up.")
+
+        Console.out.println("Awaiting handler execution completion.")
+        Await.result(handlerResponse.get, 5.seconds)
+        Console.out.println("Handler execution completed.")
       }
     }
   }

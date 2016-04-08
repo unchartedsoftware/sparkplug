@@ -24,6 +24,9 @@ import org.apache.spark.SparkContext
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.PlugMessage
 
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
+
 class PlugListener private(sparkContext: SparkContext) {
   private val handlers = collection.mutable.Map[String, PlugHandler]()
 
@@ -86,7 +89,8 @@ class PlugListener private(sparkContext: SparkContext) {
           throw new PlugListenerException(s"No handler specified for command $message.command")
         }
 
-        handler.get.onMessage(sparkContext, message)
+        val response = handler.get.onMessage(sparkContext, message)
+        val plugResponse = Await.result(response, Duration.Inf)
       })
     Console.out.println("Consumption completed.")
   }

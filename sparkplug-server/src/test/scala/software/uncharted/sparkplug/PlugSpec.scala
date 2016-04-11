@@ -48,7 +48,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
   before {
     Console.out.println("Before each - populating data and starting plug.")
     val source = Source(1 to 1)
-    val subscriber = plug.listener.getConnection.publishDirectly("q_sparkplug")
+    val subscriber = plug.listener.getConnection.get.publishDirectly("q_sparkplug")
     val sink = Sink.fromSubscriber(subscriber)
 
     source.map(i => {
@@ -98,13 +98,13 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
       plug.run()
 
       eventually (timeout(scaled(30.seconds))) {
-        val messageCount = Await.result(plug.listener.getConnection
+        val messageCount = Await.result(plug.listener.getConnection.get
           .queueDeclare(Queue("q_sparkplug", durable = true)), 5.seconds)
           .messageCount
         messageCount should be (0)
-        Console.out.println("No more messages in queue, cleaning up.")
+        // Console.out.println("No more messages in queue, cleaning up.")
 
-        Console.out.println("Awaiting handler execution completion.")
+        // Console.out.println("Awaiting handler execution completion.")
         Await.result(handlerResponse.get, 5.seconds)
         Console.out.println("Handler execution completed.")
       }

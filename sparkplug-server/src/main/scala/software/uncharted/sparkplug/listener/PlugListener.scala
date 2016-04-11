@@ -17,15 +17,17 @@
 package software.uncharted.sparkplug.listener
 
 import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, OverflowStrategy}
-import akka.stream.scaladsl.Source
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{Sink, Source}
 import io.scalac.amqp.Connection
 import org.apache.spark.SparkContext
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.PlugMessage
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Future}
 import scala.concurrent.duration.Duration
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class PlugListener private(sparkContext: SparkContext) {
   private val handlers = collection.mutable.Map[String, PlugHandler]()
@@ -78,29 +80,34 @@ class PlugListener private(sparkContext: SparkContext) {
   }
 
   def run(): Unit = {
-    Console.out.println("Consuming.")
-    val size: Int = 500
-    Source.fromPublisher(connection.get.consume("q_sparkplug"))
-      .buffer(size, OverflowStrategy.backpressure)
-      .runForeach(p => {
-        val message = PlugMessage.fromMessage(p.message)
-        val handler = handlers.get(message.command)
-        if (handler.isEmpty) {
-          throw new PlugListenerException(s"No handler specified for command $message.command")
-        }
+    val source = Source.fromPublisher(connection.get.consume("q_sparkplug"))
+    val sink = Sink.fromSubscriber(connection.get.publishDirectly("r_sparkplug"))
 
-        val response = handler.get.onMessage(sparkContext, message)
-        val plugResponse = Await.result(response, Duration.Inf)
-      })
-    Console.out.println("Consumption completed.")
+    val parallelism: Int = 10
+    val flow = source.mapAsync(parallelism) {
+      d => {
+        Future {
+          val message = PlugMessage.fromMessage(d.message)
+          val handler = handlers.get(message.command)
+          if (handler.isEmpty) {
+            throw new PlugListenerException(s"No handler specified for command $message.command")
+          }
+
+          val response = handler.get.onMessage(sparkContext, message)
+          Await.result(response, Duration.Inf).toMessage
+        }
+      }
+    }
+
+    flow.runWith(sink)
   }
 
   def isConnected: Boolean = {
     connected
   }
 
-  def getConnection: Connection = {
-    connection.get
+  def getConnection: Option[Connection] = {
+    connection
   }
 }
 

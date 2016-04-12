@@ -16,14 +16,13 @@
 package software.uncharted.sparkplug.model
 
 import akka.util.ByteStringBuilder
-import com.google.common.net.MediaType
 import io.scalac.amqp.Message
 
 case class PlugResponse(uuid: String, body: IndexedSeq[Byte], contentType: String) {
   override def toString: String = s"UUID: [ $uuid ], Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ], Content Type: [ $contentType ]"
 
   def toMessage : Message = {
-    val headers = collection.mutable.Map[String, String]()
-    new Message(headers = headers.toMap, body = this.body, contentType = Some(MediaType.parse(contentType)))
+    // val headers = collection.mutable.Map[String, String]()
+    new Message()
   }
 }

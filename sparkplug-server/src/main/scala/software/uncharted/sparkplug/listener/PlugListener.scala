@@ -89,7 +89,7 @@ class PlugListener private(sparkContext: SparkContext) {
       Console.out.println("Retrieved handler - processing message.")
       val response = handler.get.onMessage(sparkContext, message)
 
-      Console.out.println(s"Response in map to push to queue: $response")
+      Console.out.println(s"Response to push to queue: $response")
       response
     })
 

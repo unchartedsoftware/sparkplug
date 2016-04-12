@@ -88,7 +88,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           val plugResponse = new PlugResponse(message.uuid, Json.toJson(response.toMap).toString().getBytes, message.contentType)
 
           Console.out.println(s"Test command handler done executing: $plugResponse")
-          new Message()
+          plugResponse.toMessage
         }
       })
 

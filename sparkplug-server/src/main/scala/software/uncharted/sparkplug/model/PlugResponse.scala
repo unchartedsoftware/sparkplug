@@ -24,6 +24,6 @@ case class PlugResponse(uuid: String, body: IndexedSeq[Byte], contentType: Strin
 
   def toMessage : Message = {
     val headers = collection.mutable.Map[String, String]()
-    new Message(headers = headers.toMap, body = body, contentType = Some(MediaType.parse(contentType)))
+    new Message(headers = headers.toMap, body = this.body, contentType = Some(MediaType.parse(contentType)))
   }
 }

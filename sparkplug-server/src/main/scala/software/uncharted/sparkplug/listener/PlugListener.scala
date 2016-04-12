@@ -18,16 +18,11 @@ package software.uncharted.sparkplug.listener
 
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
-import akka.stream.scaladsl.{Sink, Source}
-import io.scalac.amqp.Connection
+import akka.stream.scaladsl.{Flow, Sink, Source}
+import io.scalac.amqp.{Connection, Delivery}
 import org.apache.spark.SparkContext
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.PlugMessage
-
-import scala.concurrent.{Await, Future}
-import scala.concurrent.duration.Duration
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class PlugListener private(sparkContext: SparkContext) {
   private val handlers = collection.mutable.Map[String, PlugHandler]()
@@ -71,11 +66,11 @@ class PlugListener private(sparkContext: SparkContext) {
     this
   }
 
-  def registerHandler(command: String, handler: PlugHandler) : Unit = {
+  def registerHandler(command: String, handler: PlugHandler): Unit = {
     handlers.put(command, handler)
   }
 
-  def unregisterHandler(command: String) : Unit = {
+  def unregisterHandler(command: String): Unit = {
     handlers.remove(command)
   }
 
@@ -83,23 +78,22 @@ class PlugListener private(sparkContext: SparkContext) {
     val source = Source.fromPublisher(connection.get.consume("q_sparkplug"))
     val sink = Sink.fromSubscriber(connection.get.publishDirectly("r_sparkplug"))
 
-    val parallelism: Int = 10
-    val flow = source.mapAsync(parallelism) {
-      d => {
-        Future {
-          val message = PlugMessage.fromMessage(d.message)
-          val handler = handlers.get(message.command)
-          if (handler.isEmpty) {
-            throw new PlugListenerException(s"No handler specified for command $message.command")
-          }
-
-          val response = handler.get.onMessage(sparkContext, message)
-          Await.result(response, Duration.Inf).toMessage
-        }
+    val sparkProcessor = Flow[Delivery].map(delivery => {
+      Console.out.println("Handling message delivery.")
+      val message = PlugMessage.fromMessage(delivery.message)
+      val handler = handlers.get(message.command)
+      if (handler.isEmpty) {
+        throw new PlugListenerException(s"No handler specified for command $message.command")
       }
-    }
 
-    flow.runWith(sink)
+      Console.out.println("Retrieved handler - processing message.")
+      val response = handler.get.onMessage(sparkContext, message)
+
+      Console.out.println(s"Response in map to push to queue: $response")
+      response
+    })
+
+    source.via(sparkProcessor).to(sink).run()
   }
 
   def isConnected: Boolean = {

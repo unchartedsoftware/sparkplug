@@ -15,11 +15,10 @@
  */
 package software.uncharted.sparkplug.handler
 
+import io.scalac.amqp.Message
 import org.apache.spark.SparkContext
-import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
-
-import scala.concurrent.Future
+import software.uncharted.sparkplug.model.PlugMessage
 
 trait PlugHandler {
-  def onMessage(sparkContext: SparkContext, message: PlugMessage): Future[PlugResponse]
+  def onMessage(sparkContext: SparkContext, message: PlugMessage): Message
 }

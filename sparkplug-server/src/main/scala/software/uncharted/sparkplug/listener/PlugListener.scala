@@ -79,18 +79,13 @@ class PlugListener private(sparkContext: SparkContext) {
     val sink = Sink.fromSubscriber(connection.get.publishDirectly("r_sparkplug"))
 
     val sparkProcessor = Flow[Delivery].map(delivery => {
-      Console.out.println("Handling message delivery.")
       val message = PlugMessage.fromMessage(delivery.message)
       val handler = handlers.get(message.command)
       if (handler.isEmpty) {
         throw new PlugListenerException(s"No handler specified for command $message.command")
       }
 
-      Console.out.println("Retrieved handler - processing message.")
-      val response = handler.get.onMessage(sparkContext, message)
-
-      Console.out.println(s"Response to push to queue: $response")
-      response
+      handler.get.onMessage(sparkContext, message)
     })
 
     source.via(sparkProcessor).to(sink).run()

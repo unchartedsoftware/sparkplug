@@ -22,7 +22,7 @@
 }
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '2.12'
+  gradleVersion = '2.11'
 }
 
 group = 'software.uncharted.sparkplug'

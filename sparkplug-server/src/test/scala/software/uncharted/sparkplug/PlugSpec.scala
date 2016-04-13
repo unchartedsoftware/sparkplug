@@ -25,19 +25,16 @@ import com.google.common.net.MediaType
 import io.scalac.amqp.{Message, Queue}
 import org.apache.spark.SparkContext
 import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfter, FunSpec, Matchers}
-import play.api.libs.json.Json
+import org.scalatest.{BeforeAndAfter, FunSpec}
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 
 // scalastyle:off underscore.import
 import org.scalatest.Matchers._
 
 import scala.concurrent.duration._
-
 // scalastyle:on underscore.import
 
 class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
@@ -46,10 +43,26 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
   implicit val system = ActorSystem("SparkPlug-Test")
   implicit val materializer = ActorMaterializer()
 
+  private val q_sparkplug: String = "q_sparkplug"
+  private val r_sparkplug: String = "r_sparkplug"
+
   before {
+    Console.out.println("Defining queues and cleaning as required.")
+    val qDecQ = plug.listener.getConnection.get.queueDeclare(Queue(name = q_sparkplug, durable = true))
+    Await.result(qDecQ, 5.seconds)
+
+    val rDecQ = plug.listener.getConnection.get.queueDeclare(Queue(name = r_sparkplug, durable = true))
+    Await.result(rDecQ, 5.seconds)
+
+    val qPurgeQ = plug.listener.getConnection.get.queuePurge(q_sparkplug)
+    Await.result(qPurgeQ, 5.seconds)
+
+    val rPurgeQ = plug.listener.getConnection.get.queuePurge(r_sparkplug)
+    Await.result(rPurgeQ, 5.seconds)
+
     Console.out.println("Before each - populating data and starting plug.")
     val source = Source(1 to 1)
-    val subscriber = plug.listener.getConnection.get.publishDirectly("q_sparkplug")
+    val subscriber = plug.listener.getConnection.get.publishDirectly(q_sparkplug)
     val sink = Sink.fromSubscriber(subscriber)
 
     source.map(i => {
@@ -85,7 +98,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b, a) => s"$b+$a"))
           response.put("totalLength", totalLength.toString)
 
-          val plugResponse = new PlugResponse(message.uuid, Json.toJson(response.toMap).toString().getBytes, message.contentType)
+          val plugResponse = new PlugResponse(message.uuid, response.toMap.toString.getBytes, message.contentType)
 
           Console.out.println(s"Test command handler done executing: $plugResponse")
           plugResponse.toMessage
@@ -96,12 +109,12 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
 
       eventually(timeout(scaled(30.seconds))) {
         val inboundMessageCount = Await.result(plug.listener.getConnection.get
-          .queueDeclare(Queue("q_sparkplug", durable = true)), 5.seconds)
+          .queueDeclare(Queue(q_sparkplug, durable = true)), 5.seconds)
           .messageCount
         inboundMessageCount should be(0)
 
         val outboundMessageCount = Await.result(plug.listener.getConnection.get
-          .queueDeclare(Queue("r_sparkplug", durable = true)), 5.seconds)
+          .queueDeclare(Queue(r_sparkplug, durable = true)), 5.seconds)
           .messageCount
         outboundMessageCount should be > 0
       }

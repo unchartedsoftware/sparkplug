@@ -16,9 +16,10 @@
 package software.uncharted.sparkplug.model
 
 import akka.util.ByteStringBuilder
+import com.google.common.net.MediaType
 import io.scalac.amqp.Message
 
-case class PlugMessage(uuid: String, command: String, body: IndexedSeq[Byte], contentType: String) {
+case class PlugMessage(uuid: String, command: String, body: IndexedSeq[Byte], contentType: MediaType) {
   override def toString: String = s"UUID: [ $uuid ], Command: [ $command ], Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ], " +
     s"Content Type: [ $contentType ]"
 }
@@ -26,6 +27,6 @@ case class PlugMessage(uuid: String, command: String, body: IndexedSeq[Byte], co
 object PlugMessage {
   def fromMessage(message: Message) : PlugMessage = {
     new PlugMessage(message.headers.getOrElse("uuid", "no-uuid-found"), message.headers.getOrElse("command", "no-command-found"), message.body, message
-      .contentType.toString)
+      .contentType.getOrElse(MediaType.ANY_TYPE))
   }
 }

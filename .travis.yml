@@ -17,6 +17,6 @@ before_install:
   - echo "HAS_JOSH_K_SEAL_OF_APPROVAL" >> travis.env
   # build and run test container
   - docker build -t uncharted/salt-test .
-  - docker run --env-file travis.env --rm uncharted/salt-test coverage coveralls
+  - docker run --env-file travis.env --rm uncharted/sparkplug-test
 
 script: echo "All Done!"

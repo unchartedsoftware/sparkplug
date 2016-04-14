@@ -18,3 +18,5 @@ RUN curl -LSO  https://services.gradle.org/distributions/gradle-$GRADLE_VERSION-
     echo -ne "- with Gradle $GRADLE_VERSION\n" >> /root/.built
 
 WORKDIR /opt/sparkplug
+
+ENTRYPOINT ["./gradlew", "coverage", "coveralls"]

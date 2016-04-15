@@ -1,0 +1,10 @@
+buildscript {
+  apply from: "$rootDir/gradle/scala-buildscript.gradle"
+}
+
+apply from: "$rootDir/gradle/scala.gradle"
+
+dependencies {
+  // reactive-rabbit
+  compile("io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3")
+}

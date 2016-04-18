@@ -98,7 +98,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b, a) => s"$b+$a"))
           response.put("totalLength", totalLength.toString)
 
-          val plugResponse = new PlugResponse(message.uuid, response.toMap.toString.getBytes, message.contentType)
+          val plugResponse = new PlugResponse(message.uuid, message.clusterId, response.toMap.toString.getBytes, message.contentType)
 
           Console.out.println(s"Test command handler done executing: $plugResponse")
           plugResponse.toMessage

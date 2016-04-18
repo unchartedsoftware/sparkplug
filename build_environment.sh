@@ -1,10 +1,12 @@
 #!/bin/sh
 
+cmd="./gradlew clean coverage coveralls"
 if [ -z ${@+x} ]
 then
   echo "No command line params - starting default Gradle build."
 else
   echo "Using $@ as the entrypoint."
+  cmd=$@
 fi
 
 # build our test container first; don't waste time with other stuff if this fails
@@ -33,4 +35,4 @@ docker run \
   --link sparkplug-rabbitmq:sparkplug-rabbitmq \
   -it \
   uncharted/sparkplug-test \
-  $@
+  ${cmd}

@@ -26,7 +26,6 @@ project.ext {
   scalaTestVersion = '2.2.6'
   scoverageVersion = '1.1.1'
 
-  artifactName = 'sparkplug-server'
   description = 'A Scala library that exposes Spark via message queues.'
   inceptionYear = '2015'
   url = 'https://github.com/unchartedsoftware/sparkplug'
@@ -81,7 +80,6 @@ idea {
 }
 
 jar {
-  baseName = "${artifactName}"
   version =  version
   dependsOn configurations.runtime
   from {
@@ -170,7 +168,6 @@ uploadArchives {
       }
 
       pom.project {
-        name = artifactName
         packaging = 'jar'
         // optionally artifactId can be defined here
         description = description

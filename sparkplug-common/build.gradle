@@ -7,4 +7,7 @@ apply from: "$rootDir/gradle/scala.gradle"
 dependencies {
   // reactive-rabbit
   compile("io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3")
+
+  // reactive streams
+  compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4")
 }

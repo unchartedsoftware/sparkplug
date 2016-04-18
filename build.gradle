@@ -25,9 +25,9 @@ task wrapper(type: Wrapper) {
   gradleVersion = '2.11'
 }
 
-group = 'software.uncharted.sparkplug'
-version = '0.2.0'
-
 allprojects {
   apply plugin: 'idea'
+
+  group = 'software.uncharted.sparkplug'
+  version = '0.2.0'
 }

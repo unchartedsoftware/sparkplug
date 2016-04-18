@@ -15,7 +15,10 @@
  */
 package software.uncharted.sparkplug.model
 
+import akka.util.ByteStringBuilder
+import com.google.common.net.MediaType
 import com.typesafe.config.ConfigFactory
+import io.scalac.amqp.Message
 
 case class PlugMessage(uuid: String, clusterId: String, command: String, body: IndexedSeq[Byte], contentType: MediaType) {
   override def toString: String = s"UUID: [ $uuid ], Cluster ID: [ $clusterId], Command: [ $command ], " +

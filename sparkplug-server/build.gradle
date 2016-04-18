@@ -7,20 +7,17 @@ apply from: "$rootDir/gradle/scala.gradle"
 dependencies {
   compile project(":sparkplug-common")
 
-  // reactive streams
-  compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4")
-
   // spark
   provided("org.apache.spark:spark-core_${scalaBinaryVersion}:${sparkVersion}")
 }
 
 task test(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
   executable = 'spark-submit'
-  args = ["--packages","org.mockito:mockito-all:1.10.19,org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion},com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4,io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3,com.typesafe.play:play-json_${scalaBinaryVersion}:2.4.6","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+  args = ["--packages","org.mockito:mockito-all:1.10.19,org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion},com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4,io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3","--jars","/opt/sparkplug/sparkplug-server/build/libs/${project.archivesBaseName}-${version}-scoverage.jar,/opt/sparkplug/sparkplug-common/build/libs/sparkplug-common-${version}.jar","--class","software.uncharted.sparkplug.Main","build/libs/${project.archivesBaseName}-${version}-tests.jar"]
 }
 
 task debug(overwrite: true, type: Exec, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle]) {
   executable = 'spark-submit'
   environment.put 'SPARK_JAVA_OPTS', '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=9999'
-  args = ["--packages","org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion},com.typesafe.play:play-json_${scalaBinaryVersion}:2.4.6","--jars","/opt/sparkplug/build/libs/${artifactName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${artifactName}-${version}-tests.jar"]
+  args = ["--packages","org.scalatest:scalatest_${scalaBinaryVersion}:2.2.5,org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}","--jars","/opt/sparkplug/sparkplug-server/build/libs/${project.archivesBaseName}-${version}-scoverage.jar","--class","software.uncharted.sparkplug.Main","build/libs/${project.archivesBaseName}-${version}-tests.jar"]
 }

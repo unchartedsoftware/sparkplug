@@ -15,6 +15,10 @@
  */
 package software.uncharted.sparkplug.model
 
+import akka.util.ByteStringBuilder
+import com.google.common.net.MediaType
+import io.scalac.amqp.Message
+
 case class PlugResponse(uuid: String, clusterId: String, body: IndexedSeq[Byte], contentType: MediaType) {
   override def toString: String = s"UUID: [ $uuid ], Cluster ID: [ $clusterId], " +
     s"Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ], Content Type: [ $contentType ]"

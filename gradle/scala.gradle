@@ -45,7 +45,10 @@ sourceSets {
   }
 
   scoverage { compileClasspath += configurations.provided }
-  testScoverage { compileClasspath += configurations.provided }
+  testScoverage {
+    compileClasspath += configurations.provided
+    runtimeClasspath += configurations.provided
+  }
 }
 
 dependencies {

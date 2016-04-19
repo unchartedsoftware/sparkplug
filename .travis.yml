@@ -16,7 +16,7 @@ before_install:
   - echo "DEBIAN_FRONTEND=noninteractive" >> travis.env
   - echo "HAS_JOSH_K_SEAL_OF_APPROVAL" >> travis.env
   # build and run test container
-  - docker build -t uncharted/salt-test .
+  - docker build -t uncharted/sparkplug-test .
   - docker run --env-file travis.env --rm uncharted/sparkplug-test
 
 script: echo "All Done!"

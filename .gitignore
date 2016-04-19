@@ -3,3 +3,5 @@
 .gradle
 build
 target
+metastore_db
+derby.log

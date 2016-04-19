@@ -17,6 +17,6 @@ before_install:
   - echo "HAS_JOSH_K_SEAL_OF_APPROVAL" >> travis.env
   # build and run test container
   - docker build -t uncharted/sparkplug-test .
-  - docker run --env-file travis.env --rm uncharted/sparkplug-test
+  - docker run --env-file travis.env --rm uncharted/sparkplug-test ./gradlew clean coverage coveralls
 
 script: echo "All Done!"

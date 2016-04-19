@@ -29,7 +29,7 @@ import org.scalatest.{BeforeAndAfter, FunSpec}
 import software.uncharted.sparkplug.client.{PlugClient, PlugResponseHandler}
 import software.uncharted.sparkplug.model.PlugResponse
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Promise}
 
 // scalastyle:off underscore.import
 import org.scalatest.Matchers._
@@ -40,14 +40,16 @@ import scala.concurrent.duration._
 class PlugClientSpec extends FunSpec with BeforeAndAfter with Eventually {
   val plugClient = PlugClient.getInstance()
 
-  implicit val system = ActorSystem("SparkPlug-Test")
+  implicit val system = ActorSystem("SparkPlugClient-Test")
   implicit val materializer = ActorMaterializer()
 
   private val conf = ConfigFactory.load()
-  private val q_sparkplug: String = conf.getString("inbound-queue")
-  private val r_sparkplug: String = conf.getString("outbound-queue")
+  private val q_sparkplug: String = conf.getString("sparkplug.inbound-queue")
+  private val r_sparkplug: String = conf.getString("sparkplug.outbound-queue")
 
   before {
+    plugClient.connect()
+
     Console.out.println("Defining queues and cleaning as required.")
     val qDecQ = plugClient.getConnection.get.queueDeclare(Queue(name = q_sparkplug, durable = true))
     Await.result(qDecQ, 5.seconds)
@@ -60,51 +62,48 @@ class PlugClientSpec extends FunSpec with BeforeAndAfter with Eventually {
 
     val rPurgeQ = plugClient.getConnection.get.queuePurge(r_sparkplug)
     Await.result(rPurgeQ, 5.seconds)
-
-    Console.out.println("Before each - populating data and starting plug.")
-    val source = Source(1 to 1)
-    val subscriber = plugClient.getConnection.get.publishDirectly(q_sparkplug)
-    val sink = Sink.fromSubscriber(subscriber)
-
-    source.map(i => {
-      if (i % 1000 == 0) Console.out.println(s"Generating new message: $i")
-      val headers = collection.mutable.Map[String, String]()
-      headers.put("command", "test")
-      headers.put("uuid", UUID.randomUUID().toString)
-
-      new Message(headers = headers.toMap, contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
-    }).runWith(sink)
   }
 
   after {
-    Console.out.println("After each - stopping plug.")
+    Console.out.println("After each - stopping PlugClient.")
     plugClient.shutdown()
 
     materializer.shutdown()
     system.shutdown()
   }
 
-  describe("Plug") {
-    it("should allow the creation of a Plug and run it") {
-      Console.out.println("Creating command handler.")
+  describe("PlugClient") {
+    it("should allow the creation of a PlugClient and run it") {
+      val p = Promise[String]()
+
+      Console.out.println("Creating response handler.")
       plugClient.setHandler(new PlugResponseHandler {
         override def onMessage(message: PlugResponse): Unit = {
           Console.out.println(s"Got a response from the server: $message")
+          p success "Done"
         }
       })
 
       plugClient.connect()
 
-      eventually(timeout(scaled(30.seconds))) {
-        val inboundMessageCount = Await.result(plugClient.getConnection.get
-          .queueDeclare(Queue(q_sparkplug, durable = true)), 5.seconds)
-          .messageCount
-        inboundMessageCount should be(0)
+      Console.out.println(s"Generating test responses, putting on queue $q_sparkplug")
+      val source = Source(1 to 1)
+      val subscriber = plugClient.getConnection.get.publishDirectly(q_sparkplug)
+      val sink = Sink.fromSubscriber(subscriber)
 
-        val outboundMessageCount = Await.result(plugClient.getConnection.get
-          .queueDeclare(Queue(r_sparkplug, durable = true)), 5.seconds)
-          .messageCount
-        outboundMessageCount should be > 0
+      source.map(i => {
+        val headers = collection.mutable.Map[String, String]()
+        headers.put("command", "test")
+        headers.put("uuid", UUID.randomUUID().toString)
+
+        new Message(headers = headers.toMap, contentType = Some(MediaType.PLAIN_TEXT_UTF_8), body = "This is a test".getBytes)
+      }).runWith(sink)
+
+      Console.out.println("Test messages generated.")
+
+      eventually(timeout(scaled(30.seconds))) {
+        val success = Await.result(p.future, 5.seconds)
+        success should be ("Done")
       }
     }
   }

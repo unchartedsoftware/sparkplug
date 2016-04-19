@@ -45,8 +45,8 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
   implicit val materializer = ActorMaterializer()
 
   private val conf = ConfigFactory.load()
-  private val q_sparkplug: String = conf.getString("inbound-queue")
-  private val r_sparkplug: String = conf.getString("outbound-queue")
+  private val q_sparkplug: String = conf.getString("sparkplug.inbound-queue")
+  private val r_sparkplug: String = conf.getString("sparkplug.outbound-queue")
 
   before {
     Console.out.println("Defining queues and cleaning as required.")
@@ -97,7 +97,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b, a) => s"$b+$a"))
           response.put("totalLength", totalLength.toString)
 
-          new PlugResponse(message.uuid, message.clusterId, response.toMap.toString.getBytes, message.contentType).toMessage
+          new PlugResponse(message.uuid, message.clusterId, message.command, response.toMap.toString.getBytes, message.contentType).toMessage
         }
       })
 

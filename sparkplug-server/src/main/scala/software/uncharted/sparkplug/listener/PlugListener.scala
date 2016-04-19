@@ -84,8 +84,8 @@ class PlugListener private(sparkContext: SparkContext) {
   }
 
   def run(): Unit = {
-    val source = Source.fromPublisher(connection.get.consume(conf.getString("inbound-queue")))
-    val sink = Sink.fromSubscriber(connection.get.publishDirectly(conf.getString("outbound-queue")))
+    val source = Source.fromPublisher(connection.get.consume(conf.getString("sparkplug.inbound-queue")))
+    val sink = Sink.fromSubscriber(connection.get.publishDirectly(conf.getString("sparkplug.outbound-queue")))
 
     val sparkProcessor = Flow[Delivery].map(delivery => {
       val message = PlugMessage.fromMessage(delivery.message)

@@ -62,11 +62,11 @@ class PlugClient private {
       val conf = ConfigFactory.load()
 
       val outboundSource = Source.fromIterator(() => outboundMessages.iterator)
-      val outboundPublisher = connection.get.publishDirectly(conf.getString("outbound-queue"))
+      val outboundPublisher = connection.get.publishDirectly(conf.getString("sparkplug.outbound-queue"))
       val outboundSink = Sink.fromSubscriber(outboundPublisher)
       outboundSource.to(outboundSink)
 
-      val inboundSource = Source.fromPublisher(connection.get.consume(conf.getString("inbound-queue")))
+      val inboundSource = Source.fromPublisher(connection.get.consume(conf.getString("sparkplug.inbound-queue")))
       inboundSource.runForeach(delivery => {
         if (handler.isDefined) handler.get.onMessage(PlugResponse.fromMessage(delivery.message))
       })

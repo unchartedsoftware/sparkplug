@@ -124,10 +124,9 @@ task testJar(type: Jar) {
   from sourceSets.test.output
 }
 
-task coverage(overwrite: true, dependsOn: test) << {
-  reportScoverage.execute()
-  checkScoverage.execute()
-}
+task coverage(overwrite: true, dependsOn: [reportScoverage, checkScoverage])
+
+test.dependsOn coverage
 
 coveralls {
   coberturaReportPath = "${buildDir}/reports/scoverage/cobertura.xml"

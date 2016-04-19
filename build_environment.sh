@@ -1,7 +1,7 @@
 #!/bin/sh
 
 cmd="./gradlew clean coverage coveralls"
-if [ -z ${@+x} ]
+if [ $# -eq 0 ]
 then
   echo "No command line params - starting default Gradle build."
 else

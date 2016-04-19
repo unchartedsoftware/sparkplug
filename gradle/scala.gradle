@@ -60,8 +60,8 @@ dependencies {
   testRuntime("org.pegdown:pegdown:1.6.0")
 
   // scoverage
-  scoverage "org.scoverage:scalac-scoverage-plugin_${scalaBinaryVersion}:${scoverageVersion}",
-    "org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}"
+  scoverage("org.scoverage:scalac-scoverage-plugin_${scalaBinaryVersion}:${scoverageVersion}")
+  scoverage("org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}")
 }
 
 idea {

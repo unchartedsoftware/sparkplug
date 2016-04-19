@@ -18,6 +18,6 @@ before_install:
   - docker network create sparkplug-test
   - docker run -d --name sparkplug-rabbitmq -P gonkulatorlabs/rabbitmq
   - docker build -t uncharted/sparkplug-test .
-  - docker run -v $(pwd):/opt/sparkplug --link sparkplug-rabbitmq:sparkplug-rabbitmq --rm uncharted/sparkplug-test ./gradlew clean coverage coveralls
+  - docker run -v $(pwd):/opt/sparkplug --link sparkplug-rabbitmq:sparkplug-rabbitmq --rm uncharted/sparkplug-test ./gradlew clean test
 
 script: echo "All Done!"

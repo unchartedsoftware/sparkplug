@@ -88,8 +88,6 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
       Console.out.println("Creating command handler.")
       plug.registerHandler("test", new PlugHandler() {
         override def onMessage(sc: SparkContext, message: PlugMessage): Message = {
-          Console.out.println(s"Test command handler handling: $message")
-
           val distFile = sc.textFile("/opt/sparkplug/sparkplug-server/src/test/resources/spark-sample-data.txt")
           val lineLengths = distFile.map(s => s.length)
           val totalLength = lineLengths.reduce((a, b) => a + b)
@@ -97,10 +95,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b, a) => s"$b+$a"))
           response.put("totalLength", totalLength.toString)
 
-          val plugResponse = new PlugResponse(message.uuid, message.clusterId, response.toMap.toString.getBytes, message.contentType)
-
-          Console.out.println(s"Test command handler done executing: $plugResponse")
-          plugResponse.toMessage
+          new PlugResponse(message.uuid, message.clusterId, response.toMap.toString.getBytes, message.contentType).toMessage
         }
       })
 

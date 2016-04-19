@@ -23,12 +23,20 @@ import io.scalac.amqp.Message
 case class PlugMessage(uuid: String, clusterId: String, command: String, body: IndexedSeq[Byte], contentType: MediaType) {
   override def toString: String = s"UUID: [ $uuid ], Cluster ID: [ $clusterId], Command: [ $command ], " +
     s"Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ], Content Type: [ $contentType ]"
+
+  def toMessage : Message = {
+    val headers = collection.mutable.Map[String, String]()
+    headers.put("UUID", this.uuid)
+    headers.put("cluster-id", this.clusterId)
+    headers.put("command", this.command)
+
+    new Message(body = this.body, headers = headers.toMap, contentType = Some(this.contentType))
+  }
 }
 
 object PlugMessage {
   private val conf = ConfigFactory.load
   private val clusterId = conf.getString("sparkplug.clusterID")
-
 
   def fromMessage(message: Message) : PlugMessage = {
     new PlugMessage(message.headers.getOrElse("uuid", "no-uuid-found"), message.headers.getOrElse("cluster-id", clusterId),

@@ -1,0 +1,9 @@
+buildscript {
+  apply from: "$rootDir/gradle/scala-buildscript.gradle"
+}
+
+apply from: "$rootDir/gradle/scala.gradle"
+
+dependencies {
+  compile project(":sparkplug-common")
+}

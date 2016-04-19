@@ -19,8 +19,8 @@ import akka.util.ByteStringBuilder
 import com.google.common.net.MediaType
 import io.scalac.amqp.Message
 
-case class PlugResponse(uuid: String, clusterId: String, body: IndexedSeq[Byte], contentType: MediaType) {
-  override def toString: String = s"UUID: [ $uuid ], Cluster ID: [ $clusterId], " +
+case class PlugResponse(uuid: String, clusterId: String, command: String, body: IndexedSeq[Byte], contentType: MediaType) {
+  override def toString: String = s"UUID: [ $uuid ], Cluster ID: [ $clusterId ], Command: [ $command ], " +
     s"Body: [ ${new ByteStringBuilder().putBytes(body.toArray).result().utf8String} ], Content Type: [ $contentType ]"
 
   def toMessage : Message = {
@@ -29,5 +29,12 @@ case class PlugResponse(uuid: String, clusterId: String, body: IndexedSeq[Byte],
     headers.put("cluster-id", this.clusterId)
 
     new Message(body = this.body, headers = headers.toMap, contentType = Some(this.contentType))
+  }
+}
+
+object PlugResponse {
+  def fromMessage(message: Message) : PlugResponse = {
+    new PlugResponse(message.headers.getOrElse("uuid", "no-uuid-found"), message.headers.getOrElse("cluster-id", "1"),
+      message.headers.getOrElse("command", "no-command-found"), message.body, message.contentType.getOrElse(MediaType.ANY_TYPE))
   }
 }

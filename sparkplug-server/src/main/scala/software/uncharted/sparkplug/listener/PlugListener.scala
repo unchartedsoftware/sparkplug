@@ -19,6 +19,7 @@ package software.uncharted.sparkplug.listener
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
+import com.typesafe.config.ConfigFactory
 import io.scalac.amqp.{Connection, Delivery}
 import org.apache.spark.SparkContext
 import software.uncharted.sparkplug.handler.PlugHandler
@@ -30,15 +31,23 @@ class PlugListener private(sparkContext: SparkContext) {
   private var connection: Option[Connection] = None
   private var connected: Boolean = false
 
+  private val conf = ConfigFactory.load()
+
   private implicit val system = ActorSystem("SparkPlug")
   private implicit val materializer = ActorMaterializer()
 
   @throws(classOf[PlugListenerException])
   def connect(): PlugListener = {
+    Console.out.println(s"Checking if PlugListener is connected: $connected; connecting if we are not.")
+
     if (!connected) {
+      Console.out.println("Connecting PlugListener to RabbitMQ.")
+
       try {
         connection = Some(Connection())
         connected = true
+
+        Console.out.println("PlugListener connected to RabbitMQ.")
       } catch {
         case e: Exception =>
           Console.err.println(s"Could not connect to RabbitMQ: $e")
@@ -75,8 +84,8 @@ class PlugListener private(sparkContext: SparkContext) {
   }
 
   def run(): Unit = {
-    val source = Source.fromPublisher(connection.get.consume("q_sparkplug"))
-    val sink = Sink.fromSubscriber(connection.get.publishDirectly("r_sparkplug"))
+    val source = Source.fromPublisher(connection.get.consume(conf.getString("inbound-queue")))
+    val sink = Sink.fromSubscriber(connection.get.publishDirectly(conf.getString("outbound-queue")))
 
     val sparkProcessor = Flow[Delivery].map(delivery => {
       val message = PlugMessage.fromMessage(delivery.message)

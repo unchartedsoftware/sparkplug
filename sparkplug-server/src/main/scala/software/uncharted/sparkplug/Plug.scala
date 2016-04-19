@@ -29,6 +29,8 @@ class Plug {
   sparkConf.set("spark.eventLog.enabled", "true")
   sparkConf.set("spark.eventLog.dir", "/tmp")
 
+  println(s"Connecting to spark master: ${master}")
+
   private val conf = sparkConf.setAppName("sparkplug").setMaster(master)
   val sc: SparkContext = new SparkContext(conf)
 

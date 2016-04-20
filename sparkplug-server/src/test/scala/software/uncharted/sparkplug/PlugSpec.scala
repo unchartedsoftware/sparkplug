@@ -30,7 +30,7 @@ import org.scalatest.{BeforeAndAfter, FunSpec}
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
 
-import scala.concurrent.Await
+import scala.concurrent.{Await, Promise}
 
 // scalastyle:off underscore.import
 import org.scalatest.Matchers._
@@ -39,7 +39,7 @@ import scala.concurrent.duration._
 // scalastyle:on underscore.import
 
 class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
-  val plug = new Plug()
+  val plug = Plug.getInstance()
 
   implicit val system = ActorSystem("SparkPlug-Test")
   implicit val materializer = ActorMaterializer()
@@ -49,22 +49,24 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
   private val r_sparkplug: String = conf.getString("sparkplug.outbound-queue")
 
   before {
+    plug.connect()
+
     Console.out.println("Defining queues and cleaning as required.")
-    val qDecQ = plug.listener.getConnection.get.queueDeclare(Queue(name = q_sparkplug, durable = true))
+    val qDecQ = plug.getListener.getConnection.get.queueDeclare(Queue(name = q_sparkplug, durable = true))
     Await.result(qDecQ, 5.seconds)
 
-    val rDecQ = plug.listener.getConnection.get.queueDeclare(Queue(name = r_sparkplug, durable = true))
+    val rDecQ = plug.getListener.getConnection.get.queueDeclare(Queue(name = r_sparkplug, durable = true))
     Await.result(rDecQ, 5.seconds)
 
-    val qPurgeQ = plug.listener.getConnection.get.queuePurge(q_sparkplug)
+    val qPurgeQ = plug.getListener.getConnection.get.queuePurge(q_sparkplug)
     Await.result(qPurgeQ, 5.seconds)
 
-    val rPurgeQ = plug.listener.getConnection.get.queuePurge(r_sparkplug)
+    val rPurgeQ = plug.getListener.getConnection.get.queuePurge(r_sparkplug)
     Await.result(rPurgeQ, 5.seconds)
 
     Console.out.println("Before each - populating data and starting plug.")
     val source = Source(1 to 1)
-    val subscriber = plug.listener.getConnection.get.publishDirectly(q_sparkplug)
+    val subscriber = plug.getListener.getConnection.get.publishDirectly(q_sparkplug)
     val sink = Sink.fromSubscriber(subscriber)
 
     source.map(i => {
@@ -87,6 +89,8 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
 
   describe("Plug") {
     it("should allow the creation of a Plug and run it") {
+      val p = Promise[String]()
+
       Console.out.println("Creating command handler.")
       plug.registerHandler("test", new PlugHandler() {
         override def onMessage(sc: SparkContext, message: PlugMessage): Message = {
@@ -97,22 +101,17 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
           response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b, a) => s"$b+$a"))
           response.put("totalLength", totalLength.toString)
 
-          new PlugResponse(message.uuid, message.clusterId, message.command, response.toMap.toString.getBytes, message.contentType).toMessage
+          val retVal = new PlugResponse(message.uuid, message.clusterId, message.command, response.toMap.toString.getBytes, message.contentType).toMessage
+          p success "Done"
+          retVal
         }
       })
 
       plug.run()
 
       eventually(timeout(scaled(30.seconds))) {
-        val inboundMessageCount = Await.result(plug.listener.getConnection.get
-          .queueDeclare(Queue(q_sparkplug, durable = true)), 5.seconds)
-          .messageCount
-        inboundMessageCount should be(0)
-
-        val outboundMessageCount = Await.result(plug.listener.getConnection.get
-          .queueDeclare(Queue(r_sparkplug, durable = true)), 5.seconds)
-          .messageCount
-        outboundMessageCount should be > 0
+        val success = Await.result(p.future, 5.seconds)
+        success should be ("Done")
       }
     }
   }

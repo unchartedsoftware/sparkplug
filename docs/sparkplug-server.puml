@@ -1,0 +1,45 @@
+@startuml
+
+title sparkplug server
+
+legend right
+  There is no easy way to differentiate
+  between classes and objects for Scala in UML,
+  so classes have an underscore, and objects do not.
+endlegend
+
+interface PlugHandler << (T,orchid) trait >> {
+  onMessage(SparkContext, PlugMessage)
+}
+
+class _PlugMessage << class >> {
+  String toString()
+  Message toMessage()
+}
+
+class PlugMessage << (O,orchid) object >> {
+  _PlugMessage fromMessage(Message)
+}
+
+_PlugMessage <|--- PlugMessage
+
+class _PlugListener <<class>> {
+  void connect()
+  void shutdown()
+  void registerHandler(String, PlugHandler)
+  void unregisterHandler(String)
+  void run()
+  Boolean isConnected()
+  Connection getConnection()
+}
+
+class PlugListener << (O,orchid) object >> {
+  _PlugListener getInstance()
+}
+
+_PlugListener <|--- PlugListener
+
+class PlugListenerException
+
+@enduml
+

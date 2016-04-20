@@ -20,7 +20,7 @@ import org.apache.spark.{SparkConf, SparkContext}
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.listener.PlugListener
 
-class Plug {
+class Plug private() {
   private val config = ConfigFactory.load()
   private val master = config.getString("sparkplug.master")
 
@@ -28,34 +28,77 @@ class Plug {
   sparkConf.set("spark.eventLog.enabled", "true")
   sparkConf.set("spark.eventLog.dir", "/tmp")
 
-  println(s"Connecting to spark master: ${master}")
+  private var sc: Option[SparkContext] = None
+  private var listener: Option[PlugListener] = None
 
-  private val conf = sparkConf.setAppName("sparkplug").setMaster(master)
-  val sc: SparkContext = new SparkContext(conf)
+  private var connected: Boolean = false
 
-  println("Connected to Spark.")
+  def connect(): Unit = {
+    println(s"Connecting to spark master: $master")
 
-  println("Connecting to RabbitMQ.")
-  val listener: PlugListener = PlugListener.getInstance(sc)
-  listener.connect()
+    val conf = sparkConf.setAppName("sparkplug").setMaster(master)
+    sc = Some(new SparkContext(conf))
+
+    println("Connected to Spark.")
+
+    println("Connecting to RabbitMQ.")
+    listener = Some(PlugListener.getInstance(sc.get))
+    listener.get.connect()
+    connected = true
+    println("Connected to RabbitMQ.")
+  }
 
   def run(): Unit = {
-    println("Kicking off consume.")
-    listener.run()
+    if (!connected) {
+      Console.err.println("Not connected to Spark/RabbitMQ, cannot run - perhaps you need to run `connect()` first?")
+      throw new Exception("Not connected to Spark/RabbitMQ, cannot run - perhaps you need to run `connect()` first?")
+    }
 
+    println("Kicking off consume.")
+    listener.get.run()
     println("Kicked off consume.")
   }
 
   def shutdown(): Unit = {
     Console.out.println("Shutting down.")
-    listener.shutdown()
+    if (connected) listener.get.shutdown()
   }
 
   def registerHandler(command: String, handler: PlugHandler) : Unit = {
-    listener.registerHandler(command, handler)
+    if (listener.isDefined) {
+      listener.get.registerHandler(command, handler)
+    } else {
+      Console.err.println("Not connected to Spark/RabbitMQ, cannot add handler - perhaps you need to run `connect()` first?")
+      throw new Exception("Not connected to Spark/RabbitMQ, cannot add handler - perhaps you need to run `connect()` first?")
+    }
   }
 
   def unregisterHandler(command: String) : Unit = {
-    listener.unregisterHandler(command)
+    if (listener.isDefined) {
+      listener.get.unregisterHandler(command)
+    } else {
+      Console.err.println("Not connected to Spark/RabbitMQ, cannot remove handler - perhaps you need to run `connect()` first?")
+      throw new Exception("Not connected to Spark/RabbitMQ, cannot remove handler - perhaps you need to run `connect()` first?")
+    }
+  }
+
+  def getListener: PlugListener = {
+    if (listener.isDefined) {
+      listener.get
+    } else {
+      Console.err.println("Not connected to Spark/RabbitMQ, cannot retrieve listener - perhaps you need to run `connect()` first?")
+      throw new Exception("Not connected to Spark/RabbitMQ, cannot retrieve listener - perhaps you need to run `connect()` first?")
+    }
+  }
+}
+
+object Plug {
+  private var instance: Option[Plug] = None
+
+  def getInstance(): Plug = {
+    if (instance.isEmpty) {
+      instance = Some(new Plug())
+    }
+    instance.get
   }
 }

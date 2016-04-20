@@ -1,0 +1,28 @@
+@startuml
+
+title sparkplug
+
+skinparam componentStyle uml2
+
+package "upstream application" {
+  [Business Logic] - SC
+  [Business Logic] - [sparkplug client]
+  [sparkplug client] - RabbitMQ
+}
+
+node "Spark" {
+  [sparkplug server] - RabbitMQ
+  [sparkplug server] - SC
+}
+
+node "shared cache" as SC {
+
+}
+
+note left of SC : Redis/memcached/Hazelcast
+
+cloud "RabbitMQ" {
+  [Queues]
+}
+
+@enduml

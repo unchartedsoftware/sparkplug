@@ -1,8 +1,33 @@
-allprojects {
-  group = "software.uncharted"
-  version = "0.1.3"
+/**
+ * $ ./gradlew
+ * The default task will build the project and run the test suite inside
+ * your local spark environment (spark-submit must be on the PATH).
+ *
+ * To build and install library, run ./gradlew jar install
+ *
+ * To generate documentation and docs JAR, run ./gradlew docsJar
+ *
+ * A coverage report will be present at build/reports/scoverage/index.html
+ */
+
+ buildscript {
+   repositories {
+     mavenLocal()
+     mavenCentral()
+     jcenter()
+     maven {
+       url "https://plugins.gradle.org/m2/"
+     }
+   }
 }
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '2.7'
+  gradleVersion = '2.11'
+}
+
+allprojects {
+  apply plugin: 'idea'
+
+  group = 'software.uncharted.sparkplug'
+  version = '0.2.0'
 }

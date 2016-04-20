@@ -1,4 +1,5 @@
 rootProject.name = 'sparkplug'
 
-include 'sparkplug-listener'
-include 'sparkplug-test'
+include ':sparkplug-common'
+include ':sparkplug-client'
+include ':sparkplug-server'

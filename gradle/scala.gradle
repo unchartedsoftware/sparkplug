@@ -105,7 +105,7 @@ task docs(type: ScalaDoc) {
   source = sourceSets.main.allScala
 }
 
-task docsJar(type: Jar, dependsOn: docs) {
+task docsJar(type: Jar, dependsOn: 'docs') {
   classifier = 'javadoc'
   from docs.destinationDir
 }
@@ -124,9 +124,11 @@ task testJar(type: Jar) {
   from sourceSets.test.output
 }
 
-task coverage(overwrite: true, dependsOn: [reportScoverage, checkScoverage])
-
-test.dependsOn coverage
+task coverage(overwrite: true, dependsOn: ['test']) << {
+//  testScoverage.execute()
+  reportScoverage.execute()
+  checkScoverage.execute()
+}
 
 coveralls {
   coberturaReportPath = "${buildDir}/reports/scoverage/cobertura.xml"

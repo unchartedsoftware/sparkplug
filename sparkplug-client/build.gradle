@@ -7,3 +7,5 @@ apply from: "$rootDir/gradle/scala.gradle"
 dependencies {
   compile project(":sparkplug-common")
 }
+
+task test(overwrite: true, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle])

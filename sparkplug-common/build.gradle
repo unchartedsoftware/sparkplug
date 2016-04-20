@@ -11,3 +11,5 @@ dependencies {
   // reactive streams
   compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4")
 }
+
+task coverage(overwrite: true)

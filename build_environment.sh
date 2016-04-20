@@ -1,6 +1,6 @@
 #!/bin/sh
 
-cmd="./gradlew -S --max-workers=1 clean coverage coveralls"
+cmd="./gradlew -S -a --max-workers=1 clean coverage coveralls"
 if [ $# -eq 0 ]
 then
   echo "No command line params - starting default Gradle build."

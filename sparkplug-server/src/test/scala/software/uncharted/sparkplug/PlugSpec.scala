@@ -110,7 +110,7 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
       plug.run()
 
       eventually(timeout(scaled(30.seconds))) {
-        val success = Await.result(p.future, 5.seconds)
+        val success = Await.result(p.future, 30.seconds)
         success should be ("Done")
       }
     }

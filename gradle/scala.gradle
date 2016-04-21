@@ -134,6 +134,32 @@ coveralls {
   coberturaReportPath = "${buildDir}/reports/scoverage/cobertura.xml"
 }
 
+task coberturaRootReport(type: CoberturaReport, group: 'Coverage reports') {
+  description = 'Generates an aggregate report from all subprojects'
+  dependsOn(publishedProjects.test)
+
+  additionalSourceDirs = files(publishedProjects.sourceSets.main.allSource.srcDirs)
+  sourceDirectories = files(publishedProjects.sourceSets.main.allSource.srcDirs)
+  classDirectories = files(publishedProjects.sourceSets.main.output)
+  executionData = files(publishedProjects.coberturaTestReport.executionData)
+
+  reports {
+    html.enabled = true // human readable
+    xml.enabled = true // required by coveralls
+  }
+
+  doFirst {
+    executionData = files(executionData.findAll { it.exists() })
+  }
+}
+
+tasks.coveralls(dependsOn: ['coberturaRootReport']) {
+  group = 'Coverage reports'
+  description = 'Uploads the aggregated coverage report to Coveralls'
+
+  onlyIf { System.env.'CI' }
+}
+
 scalaStyle {
   includeTestSourceDirectory = true
   source = "src/main/scala"

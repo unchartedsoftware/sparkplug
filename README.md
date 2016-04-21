@@ -1,5 +1,8 @@
 # sparkplug
 
+[![Build Status](https://travis-ci.org/unchartedsoftware/sparkplug.svg?branch=develop)](https://travis-ci.org/unchartedsoftware/sparkplug)
+[![Coverage Status](https://coveralls.io/repos/github/unchartedsoftware/sparkplug/badge.svg?branch=develop)](https://coveralls.io/github/unchartedsoftware/sparkplug?branch=develop)
+
 ## about sparkplug
 
 **sparkplug** allows [Apache Spark](https://spark.apache.org/) to act as a near real-time/first-class citizen in an enterprise architecture by exposing Spark via RabbitMQ.

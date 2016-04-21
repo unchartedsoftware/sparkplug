@@ -21,5 +21,4 @@ script:
   - docker network create sparkplug-test
   - docker run -d --name sparkplug-rabbitmq -P gonkulatorlabs/rabbitmq
   - docker build -t uncharted/sparkplug-test .
-  - docker run --env-file travis.env -v $(pwd):/opt/sparkplug --link sparkplug-rabbitmq:sparkplug-rabbitmq --rm uncharted/sparkplug-test ./gradlew clean test
-   coveralls
+  - docker run --env-file travis.env -v $(pwd):/opt/sparkplug --link sparkplug-rabbitmq:sparkplug-rabbitmq --rm uncharted/sparkplug-test ./gradlew test coveralls

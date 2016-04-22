@@ -133,6 +133,8 @@ coveralls {
   coberturaReportPath = "${buildDir}/reports/scoverage/cobertura.xml"
 }
 
+tasks.coveralls.dependsOn 'coverage'
+
 scalaStyle {
   includeTestSourceDirectory = true
   source = "src/main/scala"

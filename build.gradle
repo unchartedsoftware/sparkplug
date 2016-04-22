@@ -71,7 +71,7 @@ dependencies {
 task aggregateScoverage(type: org.scoverage.ScoverageAggregate, dependsOn :[':sparkplug-common:coverage', ':sparkplug-client:coverage', ':sparkplug-server:coverage'])
 
 coveralls {
-  coberturaReportPath = "${buildDir}/scoverage-aggregate/cobertura.xm"
+  coberturaReportPath = "${buildDir}/scoverage-aggregate/cobertura.xml"
 }
 
 tasks.coveralls.dependsOn 'aggregateScoverage'

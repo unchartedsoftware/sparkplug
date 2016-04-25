@@ -5,7 +5,6 @@ apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'com.github.maiflai.scalatest'
 apply plugin: 'org.scoverage'
-apply plugin: 'com.github.kt3k.coveralls'
 apply plugin: 'scalaStyle'
 
 repositories {
@@ -18,20 +17,6 @@ repositories {
 
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
-
-project.ext {
-  scalaBinaryVersion = '2.10'
-  scalaVersion = '2.10.6'
-  sparkVersion = '1.6.1'
-  scalaTestVersion = '2.2.6'
-  scoverageVersion = '1.1.1'
-
-  description = 'A Scala library that exposes Spark via message queues.'
-  inceptionYear = '2015'
-  url = 'https://github.com/unchartedsoftware/sparkplug'
-  ossrhUsername = project.hasProperty('ossrhUsername') ? project.getProperty('ossrhUsername') : ''
-  ossrhPassword = project.hasProperty('ossrhPassword') ? project.getProperty('ossrhPassword') : ''
-}
 
 configurations {
   provided
@@ -64,7 +49,7 @@ dependencies {
   provided("org.scala-lang:scala-library:${scalaVersion}")
 
   // scalatest
-  testCompile("org.scalatest:scalatest_${scalaBinaryVersion}:2+")
+  testCompile("org.scalatest:scalatest_${scalaBinaryVersion}:${scalaTestVersion}")
   testRuntime("org.pegdown:pegdown:1.6.0")
 
   // scoverage
@@ -125,13 +110,8 @@ task testJar(type: Jar) {
 }
 
 task coverage(overwrite: true, dependsOn: ['test']) << {
-//  testScoverage.execute()
   reportScoverage.execute()
   checkScoverage.execute()
-}
-
-coveralls {
-  coberturaReportPath = "${buildDir}/reports/scoverage/cobertura.xml"
 }
 
 scalaStyle {
@@ -177,10 +157,12 @@ uploadArchives {
       }
 
       pom.project {
-        packaging = 'jar'
-        // optionally artifactId can be defined here
-        description = description
+        ext.name = 'sparkplug'
+
+        name = "${ext.name}"
+        description = 'A Scala library that exposes Spark via message queues.'
         url = url
+        packaging = 'jar'
 
         scm {
           connection 'scm:git:git://github.com/unchartedsoftware/sparkplug.git'

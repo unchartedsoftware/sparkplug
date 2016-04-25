@@ -19,15 +19,59 @@
        url "https://plugins.gradle.org/m2/"
      }
    }
+
+   dependencies {
+     classpath 'gradle.plugin.org.scoverage:gradle-scoverage:2.0.1'
+     classpath 'org.kt3k.gradle.plugin:coveralls-gradle-plugin:2.6.3'
+   }
 }
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '2.11'
+  gradleVersion = '2.13'
 }
 
 allprojects {
   apply plugin: 'idea'
 
   group = 'software.uncharted.sparkplug'
-  version = '0.2.0'
+  version = '0.2.1'
+
+  project.ext {
+    inceptionYear = '2015'
+    url = 'https://github.com/unchartedsoftware/sparkplug'
+
+    scalaBinaryVersion = '2.10'
+    scalaVersion = '2.10.6'
+    sparkVersion = '1.6.1'
+    scalaTestVersion = '2.2.6'
+    scoverageVersion = '1.1.1'
+
+    ossrhUsername = project.hasProperty('ossrhUsername') ? project.getProperty('ossrhUsername') : ''
+    ossrhPassword = project.hasProperty('ossrhPassword') ? project.getProperty('ossrhPassword') : ''
+  }
 }
+
+repositories {
+  mavenCentral()
+  jcenter()
+  maven {
+    url "http://spingo-oss.s3.amazonaws.com/repositories/releases"
+  }
+}
+
+apply plugin: 'org.scoverage'
+apply plugin: 'com.github.kt3k.coveralls'
+
+dependencies {
+  // scoverage
+  scoverage("org.scoverage:scalac-scoverage-plugin_${scalaBinaryVersion}:${scoverageVersion}")
+  scoverage("org.scoverage:scalac-scoverage-runtime_${scalaBinaryVersion}:${scoverageVersion}")
+}
+
+task aggregateScoverage(type: org.scoverage.ScoverageAggregate, dependsOn :[':sparkplug-common:coverage', ':sparkplug-client:coverage', ':sparkplug-server:coverage'])
+
+coveralls {
+  coberturaReportPath = "${buildDir}/scoverage-aggregate/cobertura.xml"
+}
+
+tasks.coveralls.dependsOn 'aggregateScoverage'

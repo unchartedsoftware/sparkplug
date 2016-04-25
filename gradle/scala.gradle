@@ -64,7 +64,7 @@ dependencies {
   provided("org.scala-lang:scala-library:${scalaVersion}")
 
   // scalatest
-  testCompile("org.scalatest:scalatest_${scalaBinaryVersion}:2+")
+  testCompile("org.scalatest:scalatest_${scalaBinaryVersion}:${scalaTestVersion}")
   testRuntime("org.pegdown:pegdown:1.6.0")
 
   // scoverage

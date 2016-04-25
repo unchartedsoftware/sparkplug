@@ -27,7 +27,7 @@
 }
 
 task wrapper(type: Wrapper) {
-  gradleVersion = '2.12'
+  gradleVersion = '2.13'
 }
 
 allprojects {
@@ -37,15 +37,15 @@ allprojects {
   version = '0.2.1'
 
   project.ext {
+    inceptionYear = '2015'
+    url = 'https://github.com/unchartedsoftware/sparkplug'
+
     scalaBinaryVersion = '2.10'
     scalaVersion = '2.10.6'
     sparkVersion = '1.6.1'
     scalaTestVersion = '2.2.6'
     scoverageVersion = '1.1.1'
 
-    description = 'A Scala library that exposes Spark via message queues.'
-    inceptionYear = '2015'
-    url = 'https://github.com/unchartedsoftware/sparkplug'
     ossrhUsername = project.hasProperty('ossrhUsername') ? project.getProperty('ossrhUsername') : ''
     ossrhPassword = project.hasProperty('ossrhPassword') ? project.getProperty('ossrhPassword') : ''
   }

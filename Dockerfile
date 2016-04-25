@@ -4,7 +4,7 @@ MAINTAINER Michael Laccetti <mlaccetti@uncharted.software>
 RUN apt-get install -y bash ash
 
 ENV IVY_HOME /cache
-ENV GRADLE_VERSION 2.11
+ENV GRADLE_VERSION 2.13
 ENV GRADLE_HOME /usr/local/gradle
 ENV PATH ${PATH}:${GRADLE_HOME}/bin
 ENV GRADLE_OPTS -Dorg.gradle.native=false

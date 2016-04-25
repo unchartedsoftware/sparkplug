@@ -4,6 +4,8 @@ buildscript {
 
 apply from: "$rootDir/gradle/scala.gradle"
 
+uploadArchives.repositories.mavenDeployer.pom.name = 'Sparkplug Common Code'
+
 dependencies {
   // reactive-rabbit
   compile("io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3")

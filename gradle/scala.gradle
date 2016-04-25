@@ -157,10 +157,12 @@ uploadArchives {
       }
 
       pom.project {
-        packaging = 'jar'
-        // optionally artifactId can be defined here
-        description = description
+        ext.name = 'sparkplug'
+
+        name = "${ext.name}"
+        description = 'A Scala library that exposes Spark via message queues.'
         url = url
+        packaging = 'jar'
 
         scm {
           connection 'scm:git:git://github.com/unchartedsoftware/sparkplug.git'

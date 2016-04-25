@@ -4,6 +4,8 @@ buildscript {
 
 apply from: "$rootDir/gradle/scala.gradle"
 
+uploadArchives.repositories.mavenDeployer.pom.name = 'Sparkplug Client Library'
+
 dependencies {
   compile project(":sparkplug-common")
 }

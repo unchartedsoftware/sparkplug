@@ -21,11 +21,11 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.typesafe.config.ConfigFactory
 import io.scalac.amqp.{Connection, Delivery}
-import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.PlugMessage
 
-class PlugListener private(sparkContext: SparkContext) {
+class PlugListener private(sparkSession: SparkSession) {
   private val handlers = collection.mutable.Map[String, PlugHandler]()
 
   private var connection: Option[Connection] = None
@@ -94,7 +94,7 @@ class PlugListener private(sparkContext: SparkContext) {
         throw new PlugListenerException(s"No handler specified for command $message.command")
       }
 
-      handler.get.onMessage(sparkContext, message)
+      handler.get.onMessage(sparkSession, message)
     })
 
     source.via(sparkProcessor).to(sink).run()
@@ -112,9 +112,9 @@ class PlugListener private(sparkContext: SparkContext) {
 object PlugListener {
   private var instance: Option[PlugListener] = None
 
-  def getInstance(sparkContext: SparkContext): PlugListener = {
+  def getInstance(sparkSession: SparkSession): PlugListener = {
     if (instance.isEmpty) {
-      instance = Some(new PlugListener(sparkContext))
+      instance = Some(new PlugListener(sparkSession))
     }
     instance.get
   }

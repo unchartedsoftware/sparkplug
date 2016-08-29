@@ -17,6 +17,7 @@ package software.uncharted.sparkplug
 
 import com.typesafe.config.ConfigFactory
 import org.apache.spark.{SparkConf, SparkContext}
+import org.apache.spark.sql.SparkSession
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.listener.PlugListener
 
@@ -28,7 +29,8 @@ class Plug private() {
   sparkConf.set("spark.eventLog.enabled", "true")
   sparkConf.set("spark.eventLog.dir", "/tmp")
 
-  private var sc: Option[SparkContext] = None
+  private var sc: SparkContext = null
+  private var sparkSession: SparkSession = null
   private var listener: Option[PlugListener] = None
 
   private var connected: Boolean = false
@@ -37,12 +39,19 @@ class Plug private() {
     println(s"Connecting to spark master: $master")
 
     val conf = sparkConf.setAppName("sparkplug").setMaster(master)
-    sc = Some(new SparkContext(conf))
+    // sc = Some(new SparkContext(conf))
+    sparkSession = SparkSession
+      .builder()
+      .appName("sparkplug")
+      .config(conf)
+      .getOrCreate()
+    sc = sparkSession.sparkContext
+    Console.out.println(sparkSession)
 
     println("Connected to Spark.")
 
     println("Connecting to RabbitMQ.")
-    listener = Some(PlugListener.getInstance(sc.get))
+    listener = Some(PlugListener.getInstance(sparkSession))
     listener.get.connect()
     connected = true
     println("Connected to RabbitMQ.")

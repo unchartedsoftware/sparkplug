@@ -1,10 +1,10 @@
 buildscript {
-  apply from: "$rootDir/gradle/scala-buildscript.gradle"
+  apply from: "$rootDir/build.gradle"
 }
 
-apply from: "$rootDir/gradle/scala.gradle"
+// apply from: "$rootDir/gradle/scala.gradle"
 
-uploadArchives.repositories.mavenDeployer.pom.name = 'Sparkplug Common Code'
+// uploadArchives.repositories.mavenDeployer.pom.name = 'Sparkplug Common Code'
 
 dependencies {
   // reactive-rabbit
@@ -15,3 +15,4 @@ dependencies {
 }
 
 task coverage(overwrite: true)
+task test(overwrite: true, dependsOn: [jar, jarScoverage, testJar, docsJar, scalaStyle])

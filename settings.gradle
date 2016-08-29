@@ -1,4 +1,9 @@
 rootProject.name = 'sparkplug'
+gradle.ext.version = '0.2.1-SNAPSHOT'         // TODO change version
+gradle.ext.description = ''                   // TODO change project description
+gradle.ext.inceptionYear = '2015'             // TODO change inception date
+gradle.ext.group = 'software.uncharted.sparkplug'
+gradle.ext.artifactName = rootProject.name
 
 include ':sparkplug-common'
 include ':sparkplug-client'

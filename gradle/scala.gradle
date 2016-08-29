@@ -48,6 +48,8 @@ dependencies {
   // scala
   provided("org.scala-lang:scala-library:${scalaVersion}")
 
+  compile group: 'org.apache.spark', name: 'spark-sql_2.10', version: '1.3.0'
+
   // scalatest
   testCompile("org.scalatest:scalatest_${scalaBinaryVersion}:${scalaTestVersion}")
   testRuntime("org.pegdown:pegdown:1.6.0")
@@ -143,51 +145,51 @@ gradle.taskGraph.whenReady { taskGraph ->
   }
 }
 
-uploadArchives {
-  repositories {
-    mavenDeployer {
-      beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-
-      repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-        authentication(userName: ossrhUsername, password: ossrhPassword)
-      }
-
-      snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
-        authentication(userName: ossrhUsername, password: ossrhPassword)
-      }
-
-      pom.project {
-        ext.name = 'sparkplug'
-
-        name = "${ext.name}"
-        description = 'A Scala library that exposes Spark via message queues.'
-        url = url
-        packaging = 'jar'
-
-        scm {
-          connection 'scm:git:git://github.com/unchartedsoftware/sparkplug.git'
-          developerConnection 'scm:git:git@github.com:unchartedsoftware/sparkplug.git'
-          url 'https://github.com/unchartedsoftware/sparkplug'
-        }
-
-        licenses {
-          license {
-            name 'The Apache License, Version 2.0'
-            url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
-          }
-        }
-
-        developers {
-          developer {
-            id = 'mlaccetti'
-            name = 'Michael Laccetti'
-            email = 'mlaccetti@uncharted.software'
-          }
-        }
-      }
-    }
-  }
-}
+// uploadArchives {
+//   repositories {
+//     mavenDeployer {
+//       beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+//
+//       repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+//         authentication(userName: ossrhUsername, password: ossrhPassword)
+//       }
+//
+//       snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+//         authentication(userName: ossrhUsername, password: ossrhPassword)
+//       }
+//
+//       pom.project {
+//         ext.name = 'sparkplug'
+//
+//         name = "${ext.name}"
+//         description = 'A Scala library that exposes Spark via message queues.'
+//         url = url
+//         packaging = 'jar'
+//
+//         scm {
+//           connection 'scm:git:git://github.com/unchartedsoftware/sparkplug.git'
+//           developerConnection 'scm:git:git@github.com:unchartedsoftware/sparkplug.git'
+//           url 'https://github.com/unchartedsoftware/sparkplug'
+//         }
+//
+//         licenses {
+//           license {
+//             name 'The Apache License, Version 2.0'
+//             url 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+//           }
+//         }
+//
+//         developers {
+//           developer {
+//             id = 'mlaccetti'
+//             name = 'Michael Laccetti'
+//             email = 'mlaccetti@uncharted.software'
+//           }
+//         }
+//       }
+//     }
+//   }
+// }
 //////////////////////////////////////
 //END nexus oss
 //////////////////////////////////////

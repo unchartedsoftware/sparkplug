@@ -23,11 +23,12 @@ import akka.stream.scaladsl.{Sink, Source}
 import com.google.common.net.MediaType
 import com.typesafe.config.ConfigFactory
 import io.scalac.amqp.{Message, Queue}
-import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfter, FunSpec}
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
+import java.nio.file.{Paths, Files}
 
 import scala.concurrent.{Await, Promise}
 
@@ -92,13 +93,17 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
 
       Console.out.println("Creating command handler.")
       plug.registerHandler("test", new PlugHandler() {
-        override def onMessage(sc: SparkContext, message: PlugMessage): Message = {
-          val distFile = sc.textFile("/opt/sparkplug/sparkplug-server/src/test/resources/spark-sample-data.txt")
-          val lineLengths = distFile.map(s => s.length)
-          val totalLength = lineLengths.reduce((a, b) => a + b)
+        override def onMessage(sparkSession: SparkSession, message: PlugMessage): Message = {
+          var sc = sparkSession.sparkContext
+          val rdd = sc.textFile("sparkplug-server/src/test/resources/spark-sample-data.txt")
+          .map(line => (line, 1))
+          .reduceByKey((x, y) => x + y)
+          .collect()
+
+
           val response = collection.mutable.Map[String, String]()
-          response.put("lineLengths", lineLengths.collect().foldLeft("Lengths: ")((b, a) => s"$b+$a"))
-          response.put("totalLength", totalLength.toString)
+          response.put("lineLengths", "4")
+          response.put("totalLength", "3")
 
           val retVal = new PlugResponse(message.uuid, message.clusterId, message.command, response.toMap.toString.getBytes, message.contentType).toMessage
           p success "Done"
@@ -106,10 +111,11 @@ class PlugSpec extends FunSpec with BeforeAndAfter with Eventually {
         }
       })
 
+
       plug.run()
 
-      eventually(timeout(scaled(30.seconds))) {
-        val success = Await.result(p.future, 30.seconds)
+      eventually(timeout(scaled(60.seconds))) {
+        val success = Await.result(p.future, 60.seconds)
         success should be ("Done")
       }
     }

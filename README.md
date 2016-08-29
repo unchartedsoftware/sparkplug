@@ -9,7 +9,7 @@
 
 ![sparkplug components](docs/sparkplug.png "Sparkplug Components")
 
-Simply put, you write `PlugHandler` classes that are triggered based on `commands`, allowing multiple tasks to be embedded in one library.  The `PlugClient` allows for an easy way to submit jobs to the server.  One of the easiest ways to get data between the two systems is ot have the Spark job output to a shared cache, which the business logic can then access once the `PlugClient` response is handled.
+Simply put, you write `PlugHandler` classes that are triggered based on `commands`, allowing multiple tasks to be embedded in one library.  The `PlugClient` allows for an easy way to submit jobs to the server.  One of the easiest ways to get data between the two systems is to have the Spark job output to a shared cache, which the business logic can then access once the `PlugClient` response is handled.
 
 #### using sparkplug
 

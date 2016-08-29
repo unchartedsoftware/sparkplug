@@ -16,9 +16,9 @@
 package software.uncharted.sparkplug.handler
 
 import io.scalac.amqp.Message
-import org.apache.spark.SparkContext
+import org.apache.spark.sql.SparkSession
 import software.uncharted.sparkplug.model.PlugMessage
 
 trait PlugHandler {
-  def onMessage(sparkContext: SparkContext, message: PlugMessage): Message
+  def onMessage(sparkSession: SparkSession, message: PlugMessage): Message
 }

@@ -2,6 +2,7 @@
 *.iml
 .gradle
 build
+classes
 target
 metastore_db
 derby.log

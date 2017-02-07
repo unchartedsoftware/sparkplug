@@ -8,10 +8,13 @@ uploadArchives.repositories.mavenDeployer.pom.name = 'Sparkplug Common Code'
 
 dependencies {
   // reactive-rabbit
-  compile("io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.0.3")
+  compile("io.scalac:reactive-rabbit_${scalaBinaryVersion}:1.1.4")
 
   // reactive streams
-  compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.4")
+  compile("com.typesafe.akka:akka-stream-experimental_${scalaBinaryVersion}:2.0.5")
+
+  // grizzled logging
+  compile "org.clapper:grizzled-slf4j_2.10:1.0.2"
 }
 
 task coverage(overwrite: true)

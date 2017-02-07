@@ -19,13 +19,14 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
 import com.typesafe.config.{Config, ConfigFactory}
+import grizzled.slf4j.Logging
 import io.scalac.amqp.{Connection, Message}
 import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
 
 /**
   * Dirt simple way of interacting with a Spark cluster using sparkplug
   */
-class PlugClient private(config: Config) {
+class PlugClient private(config: Config) extends Logging {
   private var connection: Option[Connection] = None
   private var connected: Boolean = false
 
@@ -42,23 +43,23 @@ class PlugClient private(config: Config) {
     * @return This
     */
   def connect(): PlugClient = {
-    Console.out.println(s"Checking if PlugClient is connected: $connected; connecting if we are not.")
+    info(s"Checking if PlugClient is connected: $connected; connecting if we are not.")
 
     if (!connected) {
-      Console.out.println("Connecting PlugClient to RabbitMQ.")
+      info("Connecting PlugClient to RabbitMQ.")
 
       try {
         connection = Some(Connection())
         connected = true
 
-        Console.out.println("PlugClient connected to RabbitMQ.")
+        info("PlugClient connected to RabbitMQ.")
       } catch {
         case e: Exception =>
-          Console.err.println(s"Could not connect to RabbitMQ: $e")
+          warn(s"Could not connect to RabbitMQ: ${e.getMessage}", e)
           throw new Exception("Could not connect to RabbitMQ.", e)
       }
 
-      Console.out.println("Wiring together the inbound/outbound streams.")
+      info("Wiring together the inbound/outbound streams.")
 
       val outboundSource = Source.fromIterator(() => outboundMessages.iterator)
       val outboundPublisher = connection.get.publishDirectly(config.getString("sparkplug.outbound-queue"))
@@ -70,24 +71,24 @@ class PlugClient private(config: Config) {
         if (handler.isDefined) handler.get.onMessage(PlugResponse.fromMessage(delivery.message))
       })
 
-      Console.out.println("Inbound/outbound streams wired together.")
+      info("Inbound/outbound streams wired together.")
     }
     this
   }
 
   def shutdown(): PlugClient = {
-    Console.out.println(s"Checking if connected: $connected; disconnecting if we are.")
+    info(s"Checking if connected: $connected; disconnecting if we are.")
 
     if (connected) {
-      Console.out.println("Shutting down PlugClient.")
+      info("Shutting down PlugClient.")
       try {
         materializer.shutdown()
         system.shutdown()
         connection.get.shutdown()
-        Console.out.println("PlugClient shutdown.")
+        info("PlugClient shutdown.")
       } catch {
         case e: Exception =>
-          Console.err.println(s"Could not disconnect from RabbitMQ: $e")
+          warn(s"Could not disconnect from RabbitMQ: $e")
       }
     }
     this
@@ -109,7 +110,7 @@ class PlugClient private(config: Config) {
     */
   def sendMessage(message: PlugMessage): Unit = {
     if (!connected) {
-      Console.err.println("Not connected to RabbitMQ, cannot send message.")
+      warn("Not connected to RabbitMQ, cannot send message.")
       throw new Exception("Not connected to RabbitMQ, cannot send message.")
     }
 
@@ -125,13 +126,13 @@ class PlugClient private(config: Config) {
   }
 }
 
-object PlugClient {
+object PlugClient extends Logging {
   private var instance: Option[PlugClient] = None
   private var config: Config = ConfigFactory.load()
 
   def setConfig (newConfig: Config): Unit = {
     if (instance.isDefined) {
-      Console.err.println("Attempt to set client configuration after client has been launched")
+      warn("Attempt to set client configuration after client has been launched")
     } else {
       config = newConfig
     }

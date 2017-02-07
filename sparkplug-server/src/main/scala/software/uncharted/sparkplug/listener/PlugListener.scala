@@ -20,13 +20,14 @@ import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import com.typesafe.config.Config
+import grizzled.slf4j.Logging
 import io.scalac.amqp.{Connection, Delivery}
 import org.apache.spark.SparkContext
 import software.uncharted.sparkplug.Plug
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.PlugMessage
 
-class PlugListener private(conf: Config, sparkContext: SparkContext) {
+class PlugListener private(conf: Config, sparkContext: SparkContext) extends Logging {
   private val handlers = collection.mutable.Map[String, PlugHandler]()
 
   private var connection: Option[Connection] = None
@@ -37,19 +38,19 @@ class PlugListener private(conf: Config, sparkContext: SparkContext) {
 
   @throws(classOf[PlugListenerException])
   def connect(): PlugListener = {
-    Console.out.println(s"Checking if PlugListener is connected: $connected; connecting if we are not.")
+    info(s"Checking if PlugListener is connected: $connected; connecting if we are not.")
 
     if (!connected) {
-      Console.out.println("Connecting PlugListener to RabbitMQ.")
+      info("Connecting PlugListener to RabbitMQ.")
 
       try {
         connection = Some(Connection())
         connected = true
 
-        Console.out.println("PlugListener connected to RabbitMQ.")
+        info("PlugListener connected to RabbitMQ.")
       } catch {
         case e: Exception =>
-          Console.err.println(s"Could not connect to RabbitMQ: $e")
+          warn(s"Could not connect to RabbitMQ: ${e.getMessage}", e)
           throw new PlugListenerException("Could not connect to RabbitMQ.", e)
       }
     }
@@ -57,18 +58,18 @@ class PlugListener private(conf: Config, sparkContext: SparkContext) {
   }
 
   def shutdown(): PlugListener = {
-    Console.out.println(s"Checking if connected: $connected; disconnecting if we are.")
+    info(s"Checking if connected: $connected; disconnecting if we are.")
 
     if (connected) {
-      Console.out.println("Shutting down PlugListener.")
+      info("Shutting down PlugListener.")
       try {
         materializer.shutdown()
         system.shutdown()
         connection.get.shutdown()
-        Console.out.println("PlugListener shutdown.")
+        info("PlugListener shutdown.")
       } catch {
         case e: Exception =>
-          Console.err.println(s"Could not disconnect from RabbitMQ: $e")
+          warn(s"Could not disconnect from RabbitMQ: ${e.getMessage}", e)
       }
     }
     this

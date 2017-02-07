@@ -16,11 +16,12 @@
 package software.uncharted.sparkplug
 
 import com.typesafe.config.{Config, ConfigFactory}
+import grizzled.slf4j.Logging
 import org.apache.spark.{SparkConf, SparkContext}
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.listener.PlugListener
 
-class Plug private(config: Config) {
+class Plug private(config: Config) extends Logging {
   private val master = config.getString("sparkplug.master")
 
   private val sparkConf: SparkConf = new SparkConf()
@@ -33,34 +34,34 @@ class Plug private(config: Config) {
   private var connected: Boolean = false
 
   def connect(): Unit = {
-    println(s"Connecting to spark master: $master")
+    info(s"Connecting to spark master: $master")
 
     val conf = sparkConf.setAppName("sparkplug").setMaster(master)
     sc = Some(new SparkContext(conf))
 
-    println("Connected to Spark.")
+    info("Connected to Spark.")
 
-    println("Connecting to RabbitMQ.")
+    info("Connecting to RabbitMQ.")
     listener = Some(PlugListener.getInstance(sc.get))
     listener.get.connect()
     connected = true
-    println("Connected to RabbitMQ.")
+    info("Connected to RabbitMQ.")
   }
 
   def run(): Unit = {
     if (!connected) {
-      Console.err.println("Not connected to Spark/RabbitMQ, cannot run - perhaps you need to run `connect()` first?")
+      warn("Not connected to Spark/RabbitMQ, cannot run - perhaps you need to run `connect()` first?")
       throw new Exception("Not connected to Spark/RabbitMQ, cannot run - perhaps you need to run `connect()` first?")
     }
 
-    println("Kicking off consume.")
+    info("Kicking off consume.")
     listener.get.run()
-    println("Kicked off consume.")
+    info("Kicked off consume.")
   }
 
   def shutdown(): Unit = {
-    Console.out.println("Shutting down.")
     if (connected) {
+      info("Shutting down.")
       listener.get.shutdown()
     }
   }
@@ -69,7 +70,7 @@ class Plug private(config: Config) {
     if (listener.isDefined) {
       listener.get.registerHandler(command, handler)
     } else {
-      Console.err.println("Not connected to Spark/RabbitMQ, cannot add handler - perhaps you need to run `connect()` first?")
+      warn("Not connected to Spark/RabbitMQ, cannot add handler - perhaps you need to run `connect()` first?")
       throw new Exception("Not connected to Spark/RabbitMQ, cannot add handler - perhaps you need to run `connect()` first?")
     }
   }
@@ -78,7 +79,7 @@ class Plug private(config: Config) {
     if (listener.isDefined) {
       listener.get.unregisterHandler(command)
     } else {
-      Console.err.println("Not connected to Spark/RabbitMQ, cannot remove handler - perhaps you need to run `connect()` first?")
+      warn("Not connected to Spark/RabbitMQ, cannot remove handler - perhaps you need to run `connect()` first?")
       throw new Exception("Not connected to Spark/RabbitMQ, cannot remove handler - perhaps you need to run `connect()` first?")
     }
   }
@@ -87,13 +88,13 @@ class Plug private(config: Config) {
     if (listener.isDefined) {
       listener.get
     } else {
-      Console.err.println("Not connected to Spark/RabbitMQ, cannot retrieve listener - perhaps you need to run `connect()` first?")
+      warn("Not connected to Spark/RabbitMQ, cannot retrieve listener - perhaps you need to run `connect()` first?")
       throw new Exception("Not connected to Spark/RabbitMQ, cannot retrieve listener - perhaps you need to run `connect()` first?")
     }
   }
 }
 
-object Plug {
+object Plug extends Logging {
   private var instance: Option[Plug] = None
   private[sparkplug] var config = ConfigFactory.load()
 
@@ -105,7 +106,7 @@ object Plug {
     */
   def setConfig (newConfig: Config): Unit = {
     if (instance.isDefined) {
-      Console.err.println("Attempt to define plug configuration after instance is created")
+      warn("Attempt to define plug configuration after instance is created")
     } else {
       config = newConfig
     }

@@ -34,7 +34,7 @@ allprojects {
   apply plugin: 'idea'
 
   group = 'software.uncharted.sparkplug'
-  version = '0.2.2'
+  version = '0.2.3'
 
   project.ext {
     inceptionYear = '2015'

@@ -40,8 +40,8 @@ allprojects {
     inceptionYear = '2015'
     url = 'https://github.com/unchartedsoftware/sparkplug'
 
-    scalaBinaryVersion = '2.10'
-    scalaVersion = '2.10.6'
+    scalaBinaryVersion = '2.11'
+    scalaVersion = '2.11.8'
     sparkVersion = '1.6.1'
     scalaTestVersion = '2.2.6'
     scoverageVersion = '1.1.1'

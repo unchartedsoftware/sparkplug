@@ -19,19 +19,18 @@ package software.uncharted.sparkplug.listener
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Flow, Sink, Source}
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.Config
 import io.scalac.amqp.{Connection, Delivery}
 import org.apache.spark.SparkContext
+import software.uncharted.sparkplug.Plug
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.model.PlugMessage
 
-class PlugListener private(sparkContext: SparkContext) {
+class PlugListener private(conf: Config, sparkContext: SparkContext) {
   private val handlers = collection.mutable.Map[String, PlugHandler]()
 
   private var connection: Option[Connection] = None
   private var connected: Boolean = false
-
-  private val conf = ConfigFactory.load()
 
   private implicit val system = ActorSystem("SparkPlug")
   private implicit val materializer = ActorMaterializer()
@@ -114,7 +113,7 @@ object PlugListener {
 
   def getInstance(sparkContext: SparkContext): PlugListener = {
     if (instance.isEmpty) {
-      instance = Some(new PlugListener(sparkContext))
+      instance = Some(new PlugListener(Plug.config, sparkContext))
     }
     instance.get
   }

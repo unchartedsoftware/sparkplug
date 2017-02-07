@@ -15,13 +15,12 @@
  */
 package software.uncharted.sparkplug
 
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.apache.spark.{SparkConf, SparkContext}
 import software.uncharted.sparkplug.handler.PlugHandler
 import software.uncharted.sparkplug.listener.PlugListener
 
-class Plug private() {
-  private val config = ConfigFactory.load()
+class Plug private(config: Config) {
   private val master = config.getString("sparkplug.master")
 
   private val sparkConf: SparkConf = new SparkConf()
@@ -61,7 +60,9 @@ class Plug private() {
 
   def shutdown(): Unit = {
     Console.out.println("Shutting down.")
-    if (connected) listener.get.shutdown()
+    if (connected) {
+      listener.get.shutdown()
+    }
   }
 
   def registerHandler(command: String, handler: PlugHandler) : Unit = {
@@ -94,10 +95,28 @@ class Plug private() {
 
 object Plug {
   private var instance: Option[Plug] = None
+  private[sparkplug] var config = ConfigFactory.load()
 
+  /**
+    * Set the configuration with which the Plug instance will be created.  This will do nothing if the instance is
+    * already created.
+    *
+    * @param newConfig The configuration to use
+    */
+  def setConfig (newConfig: Config): Unit = {
+    if (instance.isDefined) {
+      Console.err.println("Attempt to define plug configuration after instance is created")
+    } else {
+      config = newConfig
+    }
+  }
+
+  /**
+    * Get the singleton Plug instance
+    */
   def getInstance(): Plug = {
     if (instance.isEmpty) {
-      instance = Some(new Plug())
+      instance = Some(new Plug(config))
     }
     instance.get
   }

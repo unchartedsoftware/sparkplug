@@ -18,14 +18,14 @@ package software.uncharted.sparkplug.client
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.{Sink, Source}
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import io.scalac.amqp.{Connection, Message}
 import software.uncharted.sparkplug.model.{PlugMessage, PlugResponse}
 
 /**
   * Dirt simple way of interacting with a Spark cluster using sparkplug
   */
-class PlugClient private {
+class PlugClient private(config: Config) {
   private var connection: Option[Connection] = None
   private var connected: Boolean = false
 
@@ -59,14 +59,13 @@ class PlugClient private {
       }
 
       Console.out.println("Wiring together the inbound/outbound streams.")
-      val conf = ConfigFactory.load()
 
       val outboundSource = Source.fromIterator(() => outboundMessages.iterator)
-      val outboundPublisher = connection.get.publishDirectly(conf.getString("sparkplug.outbound-queue"))
+      val outboundPublisher = connection.get.publishDirectly(config.getString("sparkplug.outbound-queue"))
       val outboundSink = Sink.fromSubscriber(outboundPublisher)
       outboundSource.to(outboundSink)
 
-      val inboundSource = Source.fromPublisher(connection.get.consume(conf.getString("sparkplug.inbound-queue")))
+      val inboundSource = Source.fromPublisher(connection.get.consume(config.getString("sparkplug.inbound-queue")))
       inboundSource.runForeach(delivery => {
         if (handler.isDefined) handler.get.onMessage(PlugResponse.fromMessage(delivery.message))
       })
@@ -128,10 +127,19 @@ class PlugClient private {
 
 object PlugClient {
   private var instance: Option[PlugClient] = None
+  private var config: Config = ConfigFactory.load()
+
+  def setConfig (newConfig: Config): Unit = {
+    if (instance.isDefined) {
+      Console.err.println("Attempt to set client configuration after client has been launched")
+    } else {
+      config = newConfig
+    }
+  }
 
   def getInstance(): PlugClient = {
     if (instance.isEmpty) {
-      instance = Some(new PlugClient())
+      instance = Some(new PlugClient(config))
     }
     instance.get
   }
